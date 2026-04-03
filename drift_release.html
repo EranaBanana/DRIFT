@@ -1,0 +1,3836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drift — ADHD Planner for Real Brains</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════
+   DESIGN TOKENS
+   Science-backed colours for ADHD:
+   • Soft teal-blue = focus, calm, concentration
+   • Muted sage green = completion, grounding
+   • Amber = dopamine moments only (wins, rewards)
+   • Coral = urgent accents ONLY, never dominant
+   • Lavender = gentle, low-stimulation secondary
+════════════════════════════════════════════ */
+:root {
+  --ff-display: 'Fraunces', serif;
+  --ff-body:    'Plus Jakarta Sans', sans-serif;
+  --ff-mono:    'JetBrains Mono', monospace;
+  --r:    12px;
+  --r-sm: 7px;
+  --r-pill: 100px;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --t: 0.18s;
+}
+
+/* ── CALM (light) ── */
+[data-theme="calm"] {
+  --bg:        #f2f5f7;
+  --bg2:       #e8edf1;
+  --surface:   #ffffff;
+  --surface2:  #f7f9fb;
+  --border:    #dde4ea;
+  --border2:   #c8d4dc;
+  --text:      #1e2d3a;
+  --text2:     #5a7080;
+  --text3:     #9ab0be;
+  /* Science-backed ADHD colours */
+  --teal:      #3d8fa8;
+  --teal-mid:  #5ba8bf;
+  --teal-soft: #d4eaf2;
+  --teal-pale: #edf6fa;
+  --green:     #4a9470;
+  --green-soft:#d4ede2;
+  --green-pale:#edf8f2;
+  --amber:     #d4920a;
+  --amber-soft:#fdecc8;
+  --amber-pale:#fef7e8;
+  --coral:     #c8604a;
+  --coral-soft:#f9ddd8;
+  --lav:       #7070b0;
+  --lav-soft:  #e0e0f4;
+  /* Functional */
+  --timer-bg:  #1e2d3a;
+  --timer-fg:  #f2f5f7;
+}
+
+/* ── FOCUS (dark) ── */
+[data-theme="focus"] {
+  --bg:        #0f1923;
+  --bg2:       #0a1218;
+  --surface:   #162130;
+  --surface2:  #1c2a3a;
+  --border:    #1e3048;
+  --border2:   #264060;
+  --text:      #d8e8f0;
+  --text2:     #6a90a8;
+  --text3:     #304858;
+  --teal:      #4ab8d8;
+  --teal-mid:  #6acce8;
+  --teal-soft: rgba(74,184,216,0.14);
+  --teal-pale: rgba(74,184,216,0.06);
+  --green:     #52c48a;
+  --green-soft:rgba(82,196,138,0.14);
+  --green-pale:rgba(82,196,138,0.06);
+  --amber:     #f0b830;
+  --amber-soft:rgba(240,184,48,0.14);
+  --amber-pale:rgba(240,184,48,0.06);
+  --coral:     #e87060;
+  --coral-soft:rgba(232,112,96,0.14);
+  --lav:       #9090d8;
+  --lav-soft:  rgba(144,144,216,0.14);
+  --timer-bg:  #d8e8f0;
+  --timer-fg:  #0f1923;
+}
+
+/* ════════════════════════════════════════════
+   RESET
+════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--ff-body);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease);
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+textarea { resize: none; }
+
+/* ════════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════════ */
+.shell {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════ */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Logo */
+.s-logo {
+  padding: 22px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-logo-mark {
+  display: flex; align-items: center; gap: 10px;
+}
+.s-logo-icon {
+  width: 34px; height: 34px;
+  background: var(--teal);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 3px 10px rgba(61,143,168,0.4);
+}
+.s-logo-name {
+  font-family: var(--ff-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.03em;
+}
+.s-logo-tag {
+  font-size: 9.5px;
+  color: var(--text3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* Date */
+.s-date {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-date-num {
+  font-family: var(--ff-display);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.s-date-str {
+  font-size: 10.5px;
+  color: var(--text2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Nav */
+.s-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.s-nav::-webkit-scrollbar { display: block; width: 4px; }
+.s-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+.s-nav-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 10px 8px 5px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all var(--t) var(--ease);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 1px;
+  user-select: none;
+  position: relative;
+}
+.nav-item:hover { background: var(--bg2); color: var(--text); }
+.nav-item.active { background: var(--teal-soft); color: var(--teal); }
+.nav-item.active .nav-icon { color: var(--teal); }
+
+.nav-icon {
+  font-size: 15px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-pill {
+  margin-left: auto;
+  background: var(--teal);
+  color: white;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 100px;
+  min-width: 18px;
+  text-align: center;
+  font-family: var(--ff-mono);
+}
+
+/* Emotional check-in */
+.s-checkin {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-checkin-label {
+  font-size: 9.5px;
+  color: var(--text3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.checkin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.checkin-btn {
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text2);
+  background: var(--bg2);
+  border: 1.5px solid transparent;
+  transition: all var(--t);
+  text-align: left;
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer;
+}
+.checkin-btn:hover { border-color: var(--border2); color: var(--text); }
+.checkin-btn.sel { background: var(--teal-soft); border-color: var(--teal-mid); color: var(--teal); }
+
+/* Energy */
+.s-energy {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-energy-label {
+  font-size: 9.5px;
+  color: var(--text3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.energy-track {
+  display: flex; gap: 3px;
+}
+.e-pip {
+  flex: 1; height: 5px;
+  border-radius: 100px;
+  background: var(--border);
+  cursor: pointer;
+  transition: all var(--t);
+}
+.e-pip.on { background: var(--green); }
+.e-pip:hover { transform: scaleY(1.6); }
+
+/* Theme + bottom */
+.s-bottom {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.s-bottom-label { font-size: 11px; color: var(--text2); }
+.toggle {
+  width: 38px; height: 20px;
+  background: var(--border2);
+  border-radius: 100px;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--t);
+}
+.toggle.on { background: var(--teal); }
+.toggle-knob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--t) var(--ease);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle.on .toggle-knob { transform: translateX(18px); }
+
+/* ════════════════════════════════════════════
+   MAIN
+════════════════════════════════════════════ */
+.main {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.view.active { display: flex; animation: viewIn 0.22s var(--ease); }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.view-head {
+  padding: 24px 28px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-shrink: 0;
+}
+.view-title {
+  font-family: var(--ff-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.view-sub { font-size: 12.5px; color: var(--text2); margin-top: 3px; }
+.view-acts { display: flex; gap: 7px; align-items: center; margin-top: 4px; }
+
+.view-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 28px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+/* ════════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: all var(--t) var(--ease);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--teal);
+  color: white;
+  box-shadow: 0 2px 8px rgba(61,143,168,0.35);
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-ghost {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--bg2); color: var(--text); }
+.btn-amber {
+  background: var(--amber);
+  color: white;
+  box-shadow: 0 2px 8px rgba(212,146,10,0.3);
+}
+.btn-amber:hover { filter: brightness(1.1); }
+
+/* ════════════════════════════════════════════
+   CARD
+════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-head {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title {
+  font-family: var(--ff-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+.card-add {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  font-size: 17px;
+  background: var(--bg2);
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t);
+  line-height: 1;
+}
+.card-add:hover { background: var(--teal-soft); color: var(--teal); }
+
+/* ════════════════════════════════════════════
+   ONE-THING BANNER
+════════════════════════════════════════════ */
+.one-thing {
+  background: var(--teal);
+  border-radius: var(--r);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px;
+}
+.one-thing-icon { font-size: 22px; flex-shrink: 0; }
+.one-thing-label {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 2px;
+}
+.one-thing-q {
+  font-family: var(--ff-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: white;
+}
+.one-thing-input {
+  flex: 1;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: var(--r-sm);
+  padding: 7px 11px;
+  font-size: 13px;
+  color: white;
+  outline: none;
+  transition: border-color var(--t);
+}
+.one-thing-input::placeholder { color: rgba(255,255,255,0.55); }
+.one-thing-input:focus { border-color: white; }
+
+/* ════════════════════════════════════════════
+   TODAY LAYOUT
+════════════════════════════════════════════ */
+.today-cols {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ════════════════════════════════════════════
+   TASK LIST
+════════════════════════════════════════════ */
+.task-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+  position: relative;
+}
+.task-item:last-child { border-bottom: none; }
+.task-item:hover { background: var(--bg2); }
+.task-item.done .task-text { text-decoration: line-through; color: var(--text3); }
+.task-item.rolled { border-left: 3px solid var(--lav); }
+
+.task-check {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--border2);
+  flex-shrink: 0; margin-top: 1px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t);
+}
+.task-check:hover { border-color: var(--green); }
+.task-check.done { background: var(--green); border-color: var(--green); }
+.task-check.done::after { content:'✓'; font-size:11px; color:white; font-weight:700; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-text { font-size: 13.5px; color: var(--text); line-height: 1.4; }
+.task-meta { display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+
+.tag {
+  font-size: 10px; padding: 1px 7px;
+  border-radius: 100px; font-weight: 600;
+}
+.tag-urgent { background: var(--coral-soft); color: var(--coral); }
+.tag-focus  { background: var(--teal-soft);  color: var(--teal); }
+.tag-later  { background: var(--lav-soft);   color: var(--lav); }
+.tag-rolled { background: var(--lav-soft);   color: var(--lav); font-style: italic; }
+
+.task-time {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--ff-mono);
+  display: flex; align-items: center; gap: 3px;
+}
+
+.task-expand {
+  font-size: 10.5px; color: var(--text3); cursor: pointer;
+  padding: 1px 5px; border-radius: 4px;
+  transition: all var(--t);
+}
+.task-expand:hover { color: var(--lav); background: var(--lav-soft); }
+
+.task-del {
+  opacity: 0; font-size: 13px;
+  color: var(--text3); flex-shrink: 0;
+  padding: 2px 5px; border-radius: 4px;
+  transition: all var(--t);
+}
+.task-item:hover .task-del { opacity: 1; }
+.task-del:hover { color: var(--coral); background: var(--coral-soft); }
+
+.subtask-list { display: none; padding: 4px 0 4px 28px; }
+.subtask-list.open { display: block; }
+.subtask-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 14px 4px 0;
+  font-size: 12px; color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+.subtask-item:last-child { border-bottom: none; }
+.subtask-item.done .subtask-text { text-decoration: line-through; color: var(--text3); }
+.s-check {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1.5px solid var(--border2);
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t);
+}
+.s-check:hover { border-color: var(--green); }
+.s-check.done { background: var(--green); border-color: var(--green); }
+.s-check.done::after { content:'✓'; font-size:9px; color:white; font-weight:700; }
+
+.task-add-row {
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 7px; align-items: center;
+}
+.task-input {
+  flex: 1; background: var(--bg2);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 9px; font-size: 12.5px;
+  color: var(--text); outline: none;
+  transition: border-color var(--t);
+}
+.task-input:focus { border-color: var(--teal); background: var(--surface2); }
+.task-input::placeholder { color: var(--text3); }
+.task-submit {
+  padding: 6px 12px; border-radius: var(--r-sm);
+  background: var(--teal); color: white;
+  font-size: 12.5px; font-weight: 600;
+  transition: all var(--t);
+}
+.task-submit:hover { filter: brightness(1.1); }
+
+/* ════════════════════════════════════════════
+   PRIORITY SELECTOR
+════════════════════════════════════════════ */
+.priority-row {
+  display: flex; gap: 5px;
+  padding: 6px 14px 0;
+}
+.p-opt {
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 100px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  color: var(--text2); transition: all var(--t);
+}
+.p-opt.sel.urgent { background:var(--coral-soft); color:var(--coral); border-color:var(--coral); }
+.p-opt.sel.focus  { background:var(--teal-soft);  color:var(--teal);  border-color:var(--teal); }
+.p-opt.sel.later  { background:var(--lav-soft);   color:var(--lav);   border-color:var(--lav); }
+
+/* Time estimate row */
+.time-row {
+  display: flex; gap: 5px;
+  padding: 5px 14px 0;
+}
+.t-opt {
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 100px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  color: var(--text2); transition: all var(--t);
+  font-family: var(--ff-mono);
+}
+.t-opt:hover { border-color: var(--border2); color: var(--text); }
+.t-opt.sel { background: var(--teal-soft); color: var(--teal); border-color: var(--teal); }
+
+/* ════════════════════════════════════════════
+   POMODORO TIMER
+════════════════════════════════════════════ */
+.timer-card {
+  background: var(--timer-bg);
+  color: var(--timer-fg);
+  border-radius: var(--r);
+  padding: 18px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.timer-card::after {
+  content: '';
+  position: absolute; top:-40px; right:-40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,255,255,0.03);
+  pointer-events: none;
+}
+.timer-mode-lbl {
+  font-size: 9px; letter-spacing: 0.22em;
+  text-transform: uppercase; opacity: 0.45; margin-bottom: 6px;
+}
+.timer-num {
+  font-family: var(--ff-display);
+  font-size: 52px; font-weight: 700;
+  letter-spacing: -0.05em; line-height: 1;
+  margin-bottom: 3px;
+}
+.timer-task {
+  font-size: 11px; opacity: 0.4;
+  margin-bottom: 12px; min-height: 13px;
+  font-style: italic;
+}
+.timer-bar-wrap {
+  height: 3px; background: rgba(255,255,255,0.1);
+  border-radius: 100px; margin-bottom: 14px; overflow: hidden;
+}
+.timer-bar { height: 100%; background: var(--teal-mid); border-radius: 100px; transition: width 1s linear; }
+[data-theme="focus"] .timer-bar { background: var(--teal); }
+.timer-btns { display: flex; gap: 7px; justify-content: center; }
+.t-btn {
+  padding: 7px 14px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.1);
+  color: inherit; transition: all var(--t);
+}
+.t-btn:hover { background: rgba(255,255,255,0.18); }
+.t-btn.go { background: var(--teal); color: white; padding: 7px 22px; box-shadow: 0 2px 8px rgba(61,143,168,0.4); }
+.t-btn.go:hover { filter: brightness(1.12); }
+[data-theme="focus"] .t-btn.go { box-shadow: 0 2px 10px rgba(74,184,216,0.45); }
+.timer-dots { display: flex; gap: 5px; justify-content: center; margin-top: 11px; }
+.t-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+.t-dot.done { background: var(--green); }
+
+/* Hyperfocus guard */
+.hg-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 12px;
+  font-size: 11px; opacity: 0.6;
+}
+.hg-toggle {
+  width: 30px; height: 16px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 100px; position: relative; cursor: pointer;
+}
+.hg-toggle.on { background: var(--amber); opacity: 1; }
+.hg-knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: white; transition: transform var(--t);
+}
+.hg-toggle.on .hg-knob { transform: translateX(14px); }
+.hg-row.on { opacity: 1; color: var(--amber); }
+
+/* ════════════════════════════════════════════
+   VISUAL TIMELINE
+════════════════════════════════════════════ */
+.timeline {
+  position: relative;
+  padding: 0 6px;
+}
+.tl-hour {
+  display: flex; align-items: stretch; gap: 10px;
+  min-height: 48px;
+}
+.tl-label {
+  font-size: 10px; color: var(--text3);
+  font-family: var(--ff-mono);
+  width: 36px; flex-shrink: 0;
+  padding-top: 10px; text-align: right;
+}
+.tl-spine { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.tl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border2); margin-top: 12px; flex-shrink: 0;
+}
+.tl-dot.now { background: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.tl-line { width: 1px; flex: 1; background: var(--border); margin-top: 2px; min-height: 6px; }
+.tl-content { flex: 1; padding: 7px 0 7px; }
+.tl-block {
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  border-left: 3px solid;
+  padding: 5px 9px; margin-bottom: 3px;
+  cursor: pointer; transition: all var(--t);
+}
+.tl-block:hover { filter: brightness(1.05); }
+.tl-block.c-teal  { background: var(--teal-pale);  border-color: var(--teal); }
+.tl-block.c-green { background: var(--green-pale); border-color: var(--green); }
+.tl-block.c-amber { background: var(--amber-pale); border-color: var(--amber); }
+.tl-block.c-lav   { background: var(--lav-soft);   border-color: var(--lav); }
+.tl-block-title { font-size: 12px; font-weight: 600; color: var(--text); }
+.tl-block-time  { font-size: 10px; color: var(--text2); font-family: var(--ff-mono); margin-top: 1px; }
+.tl-add { font-size: 10.5px; color: var(--text3); cursor: pointer; transition: color var(--t); }
+.tl-add:hover { color: var(--teal); }
+
+/* ════════════════════════════════════════════
+   DISTRACTION CAPTURE
+════════════════════════════════════════════ */
+.dist-input-row {
+  display: flex; gap: 7px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dist-input {
+  flex: 1; background: var(--bg2);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 9px; font-size: 12.5px;
+  color: var(--text); outline: none;
+  transition: border-color var(--t);
+}
+.dist-input:focus { border-color: var(--amber); }
+.dist-input::placeholder { color: var(--text3); }
+.dist-sub {
+  padding: 6px 11px; border-radius: var(--r-sm);
+  background: var(--amber-soft); color: var(--amber);
+  font-size: 12px; font-weight: 600;
+  transition: all var(--t);
+}
+.dist-sub:hover { filter: brightness(0.95); }
+[data-theme="focus"] .dist-sub { color: var(--amber); }
+
+.dist-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; color: var(--text2);
+}
+.dist-item:last-child { border-bottom: none; }
+.dist-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.dist-promote { margin-left: auto; font-size: 10px; color: var(--text3); cursor: pointer; transition: color var(--t); }
+.dist-promote:hover { color: var(--green); }
+
+/* ════════════════════════════════════════════
+   MEDICATION TRACKER
+════════════════════════════════════════════ */
+.med-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.med-item:last-child { border-bottom: none; }
+.med-item:hover { background: var(--bg2); }
+.med-check {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all var(--t); font-size: 13px;
+}
+.med-check:hover { border-color: var(--green); }
+.med-check.done { background: var(--green); border-color: var(--green); color: white; }
+.med-name { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
+.med-time { font-size: 10.5px; color: var(--text3); font-family: var(--ff-mono); }
+.med-del { opacity: 0; font-size: 12px; color: var(--text3); padding: 2px 5px; border-radius: 4px; cursor: pointer; transition: all var(--t); }
+.med-item:hover .med-del { opacity: 1; }
+.med-del:hover { color: var(--coral); background: var(--coral-soft); }
+
+/* ════════════════════════════════════════════
+   NOT NOW LIST
+════════════════════════════════════════════ */
+.notnow-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; color: var(--text2);
+}
+.notnow-item:last-child { border-bottom: none; }
+.notnow-bullet { width: 6px; height: 6px; border-radius: 50%; background: var(--lav); flex-shrink: 0; }
+.notnow-promote { margin-left: auto; font-size: 10px; color: var(--text3); cursor: pointer; transition: color var(--t); white-space: nowrap; }
+.notnow-promote:hover { color: var(--teal); }
+.notnow-del { font-size: 11px; color: var(--text3); cursor: pointer; transition: color var(--t); }
+.notnow-del:hover { color: var(--coral); }
+
+/* ════════════════════════════════════════════
+   IMPULSE SPEND
+════════════════════════════════════════════ */
+.spend-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.spend-item:last-child { border-bottom: none; }
+.spend-item:hover { background: var(--bg2); }
+.spend-icon { font-size: 18px; flex-shrink: 0; }
+.spend-body { flex: 1; min-width: 0; }
+.spend-name { font-size: 13px; color: var(--text); }
+.spend-timer {
+  font-size: 10px; font-family: var(--ff-mono);
+  margin-top: 2px;
+}
+.spend-timer.hot { color: var(--coral); }
+.spend-timer.warm { color: var(--amber); }
+.spend-timer.cool { color: var(--green); }
+.spend-del { font-size: 12px; color: var(--text3); cursor: pointer; padding: 3px 6px; border-radius: 4px; transition: all var(--t); }
+.spend-del:hover { color: var(--coral); background: var(--coral-soft); }
+
+/* ════════════════════════════════════════════
+   WEEK VIEW
+════════════════════════════════════════════ */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+.week-col {
+  background: var(--surface);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden; min-height: 180px;
+}
+.week-col.today { border-color: var(--teal); }
+.week-col-head {
+  padding: 9px 11px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.week-day-name { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+.week-day-num {
+  font-family: var(--ff-display);
+  font-size: 24px; font-weight: 700;
+  color: var(--text); line-height: 1.1; margin-top: 1px;
+}
+.week-col.today .week-day-num { color: var(--teal); }
+.week-tasks { padding: 7px; }
+.week-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 6px; border-radius: 5px;
+  background: var(--bg2); margin-bottom: 3px;
+  font-size: 10.5px; color: var(--text2);
+  cursor: pointer; transition: all var(--t);
+}
+.week-chip:hover { background: var(--teal-soft); color: var(--teal); }
+.week-chip.done { opacity: 0.4; text-decoration: line-through; }
+.w-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+.w-dot.urgent { background: var(--coral); }
+.w-dot.later  { background: var(--lav); }
+.week-add {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 6px; font-size: 10.5px; color: var(--text3);
+  border-radius: 5px; width: 100%; transition: all var(--t);
+}
+.week-add:hover { background: var(--bg2); color: var(--text2); }
+
+/* ════════════════════════════════════════════
+   BRAIN DUMP
+════════════════════════════════════════════ */
+.dump-layout { display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
+.dump-layout .card { display: flex; flex-direction: column; }
+.dump-ta {
+  width: 100%; min-height: 280px;
+  padding: 16px; background: transparent;
+  border: none; outline: none;
+  font-size: 14px; color: var(--text);
+  line-height: 1.85; font-family: var(--ff-body);
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+}
+.dump-ta::placeholder { color: var(--text3); font-style: italic; }
+.dump-tools {
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.dump-btn {
+  font-size: 11px; padding: 4px 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  color: var(--text2); transition: all var(--t);
+}
+.dump-btn:hover { background: var(--teal-soft); color: var(--teal); border-color: var(--teal); }
+.dump-wc { margin-left: auto; font-size: 10.5px; color: var(--text3); font-family: var(--ff-mono); }
+
+/* ════════════════════════════════════════════
+   HABITS
+════════════════════════════════════════════ */
+.habit-table { overflow: hidden; }
+.habit-head {
+  display: grid;
+  grid-template-columns: 190px repeat(7, 1fr);
+  background: var(--surface2);
+  border-bottom: 2px solid var(--border);
+}
+.habit-th {
+  padding: 9px 7px; font-size: 9.5px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text3); text-align: center; font-weight: 600;
+}
+.habit-th:first-child { text-align: left; padding-left: 14px; }
+.habit-th.today-h { color: var(--teal); }
+.habit-row {
+  display: grid;
+  grid-template-columns: 190px repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.habit-row:last-child { border-bottom: none; }
+.habit-row:hover { background: var(--bg2); }
+.habit-name-cell {
+  padding: 11px 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.h-emoji { font-size: 15px; }
+.h-name-wrap { }
+.h-name { font-size: 12.5px; font-weight: 500; color: var(--text); }
+.h-streak { font-size: 9.5px; color: var(--text3); margin-top: 1px; }
+.habit-cell {
+  display: flex; align-items: center; justify-content: center;
+  padding: 9px; cursor: pointer;
+}
+.h-tick {
+  width: 26px; height: 26px; border-radius: 7px;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all var(--t);
+  background: var(--surface);
+}
+.h-tick:hover { border-color: var(--green); transform: scale(1.08); }
+.h-tick.on { background: var(--green); border-color: var(--green); color: white; }
+.h-tick.on::after { content: '✓'; font-size: 13px; font-weight: 700; }
+.habit-cell.today-h .h-tick { border-color: var(--green-soft); }
+.add-habit-row {
+  padding: 11px 14px;
+  display: flex; gap: 7px;
+  border-top: 1px solid var(--border);
+}
+
+/* ════════════════════════════════════════════
+   WEEKLY REFLECTION
+════════════════════════════════════════════ */
+.reflect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.reflect-prompt {
+  background: var(--surface);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.reflect-prompt-head {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+.reflect-ta {
+  width: 100%; min-height: 90px;
+  padding: 10px 14px;
+  background: transparent; border: none; outline: none;
+  font-size: 13px; color: var(--text); font-family: var(--ff-body);
+  line-height: 1.7;
+}
+.reflect-ta::placeholder { color: var(--text3); font-style: italic; }
+
+/* ════════════════════════════════════════════
+   WINS
+════════════════════════════════════════════ */
+.wins-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.win-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.win-item:last-child { border-bottom: none; }
+.win-ico {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--amber-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.win-text { font-size: 13px; color: var(--text); line-height: 1.4; flex: 1; }
+.win-date { font-size: 10.5px; color: var(--text3); margin-top: 2px; font-family: var(--ff-mono); }
+.add-win-area { padding: 11px 14px; border-top: 1px solid var(--border); }
+.add-win-ta {
+  width: 100%; background: var(--bg2);
+  border: 1.5px solid transparent; border-radius: var(--r-sm);
+  padding: 8px 10px; font-size: 13px; color: var(--text);
+  outline: none; transition: border-color var(--t);
+  min-height: 56px; font-family: var(--ff-body);
+}
+.add-win-ta:focus { border-color: var(--amber); }
+.add-win-ta::placeholder { color: var(--text3); }
+
+.affirmation-box {
+  background: linear-gradient(135deg, var(--teal-pale), var(--green-pale));
+  border: 1px solid var(--teal-soft);
+  border-radius: var(--r); padding: 22px;
+  text-align: center;
+}
+.aff-text {
+  font-family: var(--ff-display);
+  font-size: 15px; font-weight: 400;
+  font-style: italic; color: var(--text);
+  line-height: 1.6; margin-bottom: 14px;
+  transition: opacity 0.4s;
+}
+.aff-refresh {
+  font-size: 11.5px; color: var(--text2);
+  padding: 6px 14px; border-radius: 100px;
+  background: var(--surface); border: 1px solid var(--border);
+  cursor: pointer; transition: all var(--t);
+}
+.aff-refresh:hover { background: var(--teal-soft); color: var(--teal); border-color: var(--teal); }
+
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.stat-box {
+  background: var(--surface); border-radius: var(--r);
+  border: 1px solid var(--border); padding: 13px 14px; text-align: center;
+}
+.stat-num {
+  font-family: var(--ff-display); font-size: 30px;
+  font-weight: 700; color: var(--text); letter-spacing: -0.05em; line-height: 1;
+}
+.stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+
+/* ════════════════════════════════════════════
+   IMPULSE SPEND VIEW
+════════════════════════════════════════════ */
+.spend-hero {
+  background: var(--amber);
+  border-radius: var(--r); padding: 16px 20px; margin-bottom: 16px;
+  display: flex; gap: 14px; align-items: center;
+}
+.spend-hero-icon { font-size: 26px; flex-shrink: 0; }
+.spend-hero-title { font-family: var(--ff-display); font-size: 15px; font-weight: 600; color: white; }
+.spend-hero-sub { font-size: 11.5px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+.spend-hero-input {
+  flex: 1; background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  border-radius: var(--r-sm); padding: 7px 11px;
+  font-size: 13px; color: white; outline: none;
+  transition: border-color var(--t);
+}
+.spend-hero-input::placeholder { color: rgba(255,255,255,0.6); }
+.spend-hero-input:focus { border-color: white; }
+.spend-hero-btn {
+  padding: 8px 14px; border-radius: var(--r-sm);
+  background: white; color: var(--amber);
+  font-size: 12.5px; font-weight: 700;
+  flex-shrink: 0; transition: all var(--t);
+}
+.spend-hero-btn:hover { filter: brightness(0.96); }
+
+/* ════════════════════════════════════════════
+   MODALS
+════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--r); border: 1px solid var(--border);
+  width: 100%; max-width: 400px; overflow: hidden;
+  animation: modIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modIn {
+  from { opacity:0; transform: scale(0.9) translateY(10px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.modal-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-family: var(--ff-display); font-size: 16px; font-weight: 600; color: var(--text); }
+.modal-close { font-size: 20px; color: var(--text3); padding: 2px 6px; border-radius: 4px; transition: all var(--t); }
+.modal-close:hover { color: var(--coral); background: var(--coral-soft); }
+.modal-body { padding: 16px 18px; }
+.modal-foot { padding: 10px 18px 14px; display: flex; gap: 7px; justify-content: flex-end; }
+.m-field { margin-bottom: 13px; }
+.m-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2); margin-bottom: 5px; }
+.m-input {
+  width: 100%; background: var(--bg2);
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  padding: 8px 11px; font-size: 13.5px; color: var(--text);
+  outline: none; transition: border-color var(--t); font-family: var(--ff-body);
+}
+.m-input:focus { border-color: var(--teal); }
+.m-input::placeholder { color: var(--text3); }
+.m-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+
+/* Emoji picker */
+.emoji-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.emoji-opt {
+  font-size: 20px; padding: 5px; border-radius: 6px;
+  cursor: pointer; transition: all var(--t);
+  border: 2px solid transparent;
+}
+.emoji-opt:hover { background: var(--bg2); }
+.emoji-opt.sel { background: var(--teal-soft); border-color: var(--teal); }
+
+/* Colour picker */
+.color-row { display: flex; gap: 7px; margin-top: 4px; }
+.color-opt {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all var(--t);
+}
+.color-opt:hover { transform: scale(1.2); }
+.color-opt.sel { border-color: var(--text); }
+
+/* ════════════════════════════════════════════
+   EMPTY STATES
+════════════════════════════════════════════ */
+.empty {
+  padding: 24px 14px; text-align: center; color: var(--text3);
+}
+.empty-icon { font-size: 28px; margin-bottom: 6px; }
+.empty-text { font-size: 12.5px; }
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 22px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--text); color: var(--bg);
+  padding: 8px 18px; border-radius: 100px;
+  font-size: 12px; letter-spacing: 0.06em;
+  opacity: 0; transition: all 0.25s;
+  z-index: 9999; pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+/* Week progress bars (in wins view) */
+.wk-bar-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.wk-bar-label { font-size: 10.5px; color: var(--text3); width: 26px; }
+.wk-bar-track { flex: 1; height: 7px; background: var(--bg2); border-radius: 100px; overflow: hidden; }
+.wk-bar-fill { height: 100%; background: var(--green); border-radius: 100px; transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+.wk-bar-count { font-size: 10px; color: var(--text3); font-family: var(--ff-mono); width: 28px; text-align: right; }
+
+/* ════════════════════════════════════════════
+   DATA SAFETY MONITOR
+════════════════════════════════════════════ */
+.storage-bar-wrap {
+  padding: 10px 16px 8px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.storage-bar-label {
+  font-size: 9.5px; color: var(--text3);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.storage-bar-label span:last-child { font-family: var(--ff-mono); font-size: 9px; color: var(--text3); letter-spacing: 0; }
+.storage-track { height: 4px; background: var(--border); border-radius: 100px; overflow: hidden; margin-bottom: 5px; }
+.storage-fill { height: 100%; border-radius: 100px; transition: width 0.6s var(--ease), background 0.4s; background: var(--green); }
+.storage-fill.warn   { background: var(--amber); }
+.storage-fill.danger { background: var(--coral); }
+
+.backup-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 100px;
+  font-size: 10px; font-weight: 600;
+  cursor: pointer; transition: all var(--t) var(--ease);
+  border: 1px solid transparent; width: 100%;
+  font-family: var(--ff-body); margin-top: 6px;
+}
+.backup-pill:hover { filter: brightness(0.96); }
+.bp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.backup-pill.bp-good   { background: var(--green-soft);  color: var(--green);  border-color: var(--green-soft); }
+.backup-pill.bp-good .bp-dot   { background: var(--green); }
+.backup-pill.bp-warn   { background: var(--amber-soft);  color: var(--amber);  border-color: var(--amber-soft); }
+.backup-pill.bp-warn .bp-dot   { background: var(--amber); animation: dot-pulse 1.8s ease-in-out infinite; }
+.backup-pill.bp-danger { background: var(--coral-soft);  color: var(--coral);  border-color: var(--coral-soft); }
+.backup-pill.bp-danger .bp-dot { background: var(--coral); animation: dot-pulse 1s ease-in-out infinite; }
+@keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(1.5)} }
+
+#dsm-toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--bg);
+  border-radius: var(--r);
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px 14px 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  z-index: 9999; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  max-width: 400px; width: calc(100% - 48px);
+}
+#dsm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+#dsm-toast .dt-icon { font-size: 1.3rem; flex-shrink: 0; }
+#dsm-toast .dt-body { flex: 1; }
+#dsm-toast .dt-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+#dsm-toast .dt-sub   { font-size: 11px; opacity: 0.7; line-height: 1.4; }
+#dsm-toast .dt-cta {
+  background: var(--teal); color: white; border: none;
+  padding: 7px 13px; border-radius: var(--r-sm);
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+  font-family: var(--ff-body); transition: all var(--t);
+}
+#dsm-toast .dt-cta:hover { filter: brightness(1.1); }
+#dsm-toast .dt-x {
+  background: none; border: none; color: inherit;
+  opacity: 0.4; font-size: 18px; cursor: pointer;
+  flex-shrink: 0; padding: 0 2px; transition: opacity var(--t);
+}
+#dsm-toast .dt-x:hover { opacity: 0.8; }
+
+#storage-banner {
+  display: none; position: sticky; top: 0; z-index: 200;
+  background: var(--coral); color: white;
+  padding: 10px 20px; font-size: 12.5px;
+  font-weight: 500; text-align: center;
+  gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap;
+}
+#storage-banner.show { display: flex; }
+#storage-banner strong { font-weight: 700; }
+#storage-banner .sb-btn {
+  background: white; color: var(--coral); border: none;
+  padding: 5px 12px; border-radius: 100px;
+  font-size: 11.5px; font-weight: 700; cursor: pointer;
+  font-family: var(--ff-body); transition: all var(--t);
+}
+#storage-banner .sb-btn:hover { filter: brightness(0.96); }
+#storage-banner .sb-btn.secondary { background: rgba(255,255,255,0.2); color: white; }
+/* One-thing completion */
+.one-thing { transition: background 0.5s var(--ease); }
+.one-thing.completed { background: var(--green); }
+.one-thing-complete-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: white; cursor: pointer; flex-shrink: 0;
+  transition: all 0.25s var(--ease);
+}
+.one-thing-complete-btn:hover { background: rgba(255,255,255,0.3); border-color: white; transform: scale(1.1); }
+.one-thing-complete-btn.done { background: white; border-color: white; color: var(--green); }
+.one-thing-strike { text-decoration: line-through; opacity: 0.7; }
+.one-thing-done-msg {
+  font-family: var(--ff-display); font-size: 13.5px; font-weight: 600;
+  color: white; font-style: italic;
+}
+/* Confetti canvas */
+#confetti-canvas {
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+}
+
+/* ════════════════════════════════════════════
+   TASK PLAY BUTTON & TIMER LINK
+════════════════════════════════════════════ */
+.task-play {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--teal-soft); color: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0; cursor: pointer;
+  border: 1px solid var(--teal-mid);
+  transition: all var(--t); opacity: 0;
+}
+.task-item:hover .task-play { opacity: 1; }
+.task-play:hover { background: var(--teal); color: white; transform: scale(1.1); }
+.task-item.focusing { border-left: 3px solid var(--teal); }
+.task-item.focusing .task-text { color: var(--teal); }
+@keyframes focusPulse { 0%,100%{box-shadow:0 0 0 0 rgba(61,143,168,0.3)} 50%{box-shadow:0 0 0 6px rgba(61,143,168,0)} }
+.task-item.focusing { animation: focusPulse 2s ease-in-out infinite; border-radius:0; }
+
+/* Timer drop zone */
+.timer-drop-zone {
+  position: absolute; inset: 0;
+  border-radius: var(--r);
+  border: 3px dashed transparent;
+  transition: all 0.2s;
+  pointer-events: none;
+}
+.timer-card { position: relative; }
+.timer-card.drag-over .timer-drop-zone {
+  border-color: var(--teal);
+  background: rgba(74,184,216,0.08);
+}
+
+/* Completion prompt overlay */
+#timer-done-prompt {
+  display: none; position: absolute; inset: 0;
+  background: var(--timer-bg);
+  border-radius: var(--r);
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 18px; z-index: 10;
+}
+#timer-done-prompt.show { display: flex; }
+.tdp-title {
+  font-family: var(--ff-display); font-size: 15px; font-weight: 600;
+  color: var(--timer-fg); text-align: center; line-height: 1.4;
+}
+.tdp-btns { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.tdp-btn {
+  padding: 9px 14px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: var(--ff-body); transition: all var(--t);
+  text-align: center; border: none;
+}
+.tdp-btn.yes { background: var(--green); color: white; }
+.tdp-btn.yes:hover { filter: brightness(1.1); }
+.tdp-btn.more { background: rgba(255,255,255,0.12); color: var(--timer-fg); }
+.tdp-btn.more:hover { background: rgba(255,255,255,0.2); }
+.tdp-btn.keep { background: rgba(255,255,255,0.06); color: var(--timer-fg); opacity: 0.7; }
+.tdp-btn.keep:hover { opacity: 1; }
+
+/* Archive nav item — distinct colour */
+.nav-item.archive-nav { color: var(--amber); }
+.nav-item.archive-nav.active { background: var(--amber-soft); color: var(--amber); }
+
+/* Archive mode banner — sticky at top of main */
+#archive-banner {
+  display: none;
+  position: sticky; top: 0; z-index: 200;
+  background: var(--amber);
+  padding: 10px 20px;
+  gap: 12px; align-items: center; justify-content: space-between;
+  flex-wrap: wrap;
+}
+#archive-banner.show { display: flex; }
+.ab-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.ab-icon { font-size: 1.1rem; flex-shrink: 0; }
+.ab-text { font-size: 12.5px; font-weight: 600; color: white; }
+.ab-sub  { font-size: 11px; color: rgba(255,255,255,0.75); }
+.ab-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.ab-btn {
+  padding: 6px 14px; border-radius: var(--r-sm);
+  font-size: 11.5px; font-weight: 700;
+  cursor: pointer; font-family: var(--ff-body);
+  transition: all var(--t); border: none;
+}
+.ab-btn.primary { background: white; color: var(--amber); }
+.ab-btn.primary:hover { filter: brightness(0.96); }
+.ab-btn.ghost   { background: rgba(255,255,255,0.2); color: white; }
+.ab-btn.ghost:hover { background: rgba(255,255,255,0.3); }
+
+/* Archive view panels */
+#view-archive { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+#view-archive.active { display: flex; animation: viewIn 0.22s var(--ease); }
+
+/* Archive section tabs */
+.archive-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.archive-tab {
+  padding: 6px 14px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border);
+  color: var(--text2); background: var(--surface);
+  transition: all var(--t);
+}
+.archive-tab:hover { border-color: var(--border2); color: var(--text); }
+.archive-tab.active {
+  background: var(--amber-soft); color: var(--amber);
+  border-color: var(--amber);
+}
+
+/* Archive section panels */
+.archive-section { display: none; }
+.archive-section.active { display: block; }
+
+/* Archive task item — read-only */
+.arc-task {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 14px; border-bottom: 1px solid var(--border);
+}
+.arc-task:last-child { border-bottom: none; }
+.arc-check-icon {
+  width: 16px; height: 16px; border-radius: 4px;
+  flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+}
+.arc-check-icon.done { background: var(--green); color: white; }
+.arc-check-icon.undone { border: 1.5px solid var(--border2); }
+.arc-task-text { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+.arc-task-text.done { text-decoration: line-through; color: var(--text3); }
+.arc-task-meta { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+.arc-date-group {
+  padding: 8px 14px 4px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+/* Archive win item */
+.arc-win {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.arc-win:last-child { border-bottom: none; }
+.arc-win-ico {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--amber-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.arc-win-text { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+.arc-win-date { font-size: 10.5px; color: var(--text3); margin-top: 2px; font-family: var(--ff-mono); }
+
+/* Archive reflection card */
+.arc-reflect {
+  background: var(--surface); border-radius: var(--r);
+  border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px;
+}
+.arc-reflect-head {
+  padding: 10px 14px 8px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.arc-reflect-week { font-weight: 600; font-size: 13px; color: var(--text); }
+.arc-reflect-date { font-size: 10.5px; color: var(--text3); font-family: var(--ff-mono); }
+.arc-reflect-body { padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.arc-reflect-q { font-size: 10px; font-weight: 700; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.arc-reflect-a { font-size: 13px; color: var(--text); line-height: 1.6; }
+.arc-reflect-a.empty { color: var(--text3); font-style: italic; }
+
+/* Archive habits grid */
+.arc-habits-table { overflow-x: auto; }
+.arc-habits-grid {
+  display: grid;
+  min-width: 500px;
+}
+.arc-habit-row {
+  display: grid;
+  grid-template-columns: 180px repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.arc-habit-row:last-child { border-bottom: none; }
+.arc-habit-name {
+  padding: 9px 14px; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--text);
+}
+.arc-habit-cell {
+  display: flex; align-items: center; justify-content: center; padding: 8px;
+}
+.arc-h-dot {
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.arc-h-dot.done { background: var(--green-soft); color: var(--green); }
+.arc-h-dot.miss { background: var(--bg2); color: var(--text3); font-size: 10px; }
+
+/* Archive summary stat */
+.arc-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 20px;
+}
+.arc-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px; text-align: center;
+}
+.arc-stat-num { font-family: var(--ff-display); font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.04em; }
+.arc-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+
+/* Archive brain dump */
+.arc-dump-text {
+  white-space: pre-wrap; font-size: 14px; color: var(--text);
+  line-height: 1.85; padding: 16px; font-family: var(--ff-body);
+}
+
+/* Empty archive state */
+.arc-empty {
+  padding: 32px; text-align: center; color: var(--text3);
+}
+.arc-empty-icon { font-size: 2rem; margin-bottom: 8px; }
+.arc-empty-text { font-size: 13px; }
+</style>
+<body data-theme="calm">
+
+<div class="shell">
+
+<!-- Storage warning banner — sticky, appears at 80%+ usage -->
+<div id="storage-banner">
+  <span>⚠️ <strong>Your planner is getting full.</strong> Export your data to keep everything safe.</span>
+  <button class="sb-btn" onclick="DSM.exportAndRecord()">Back up now ↓</button>
+  <button class="sb-btn secondary" onclick="DSM.dismissBanner()">Remind me later</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="s-logo">
+    <div class="s-logo-mark">
+      <div class="s-logo-icon">🧠</div>
+      <div>
+        <div class="s-logo-name">Drift</div>
+        <div class="s-logo-tag">ADHD Planner</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="s-date">
+    <div class="s-date-num" id="s-day">30</div>
+    <div class="s-date-str" id="s-datestr">MONDAY · MARCH 2026</div>
+  </div>
+
+  <nav class="s-nav">
+    <div class="s-nav-label">Plan</div>
+    <div class="nav-item active" onclick="go('today',this)">
+      <div class="nav-icon">☀️</div><span>Today</span>
+      <span class="nav-pill" id="badge-today">0</span>
+    </div>
+    <div class="nav-item" onclick="go('week',this)">
+      <div class="nav-icon">📅</div><span>This Week</span>
+    </div>
+    <div class="nav-item" onclick="go('meds',this)">
+      <div class="nav-icon">💊</div><span>Medication</span>
+    </div>
+
+    <div class="s-nav-label">Think</div>
+    <div class="nav-item" onclick="go('dump',this)">
+      <div class="nav-icon">🌀</div><span>Brain Dump</span>
+    </div>
+    <div class="nav-item" onclick="go('notnow',this)">
+      <div class="nav-icon">🅿️</div><span>Not Now</span>
+    </div>
+    <div class="nav-item" onclick="go('spend',this)">
+      <div class="nav-icon">🛑</div><span>Impulse Pause</span>
+    </div>
+
+    <div class="s-nav-label">Track</div>
+    <div class="nav-item" onclick="go('habits',this)">
+      <div class="nav-icon">✨</div><span>Habits</span>
+    </div>
+    <div class="nav-item" onclick="go('reflect',this)">
+      <div class="nav-icon">🔮</div><span>Reflection</span>
+    </div>
+    <div class="nav-item" onclick="go('wins',this)">
+      <div class="nav-icon">🏆</div><span>Wins</span>
+    </div>
+
+  </nav>
+
+  <!-- Emotional check-in — ADHD-specific states -->
+  <div class="s-checkin">
+    <div class="s-checkin-label">Right now I feel…</div>
+    <div class="checkin-grid" id="checkin-grid">
+      <button class="checkin-btn" onclick="setCheckin(this,'😵‍💫','Overwhelmed')">😵‍💫 Overwhelmed</button>
+      <button class="checkin-btn" onclick="setCheckin(this,'🌀','Scattered')">🌀 Scattered</button>
+      <button class="checkin-btn" onclick="setCheckin(this,'⚡','Hyperfocused')">⚡ Hyperfocused</button>
+      <button class="checkin-btn" onclick="setCheckin(this,'😶‍🌫️','Flat/Low')">😶‍🌫️ Flat / Low</button>
+      <button class="checkin-btn" onclick="setCheckin(this,'😰','Anxious')">😰 Anxious</button>
+      <button class="checkin-btn" onclick="setCheckin(this,'😊','Good')">😊 Good</button>
+    </div>
+  </div>
+
+  <!-- Energy -->
+  <div class="s-energy">
+    <div class="s-energy-label">
+      <span>Energy</span>
+      <span id="energy-lbl" style="font-family:var(--ff-mono)">—</span>
+    </div>
+    <div class="energy-track" id="energy-track">
+      <div class="e-pip" onclick="setEnergy(1)"></div>
+      <div class="e-pip" onclick="setEnergy(2)"></div>
+      <div class="e-pip" onclick="setEnergy(3)"></div>
+      <div class="e-pip" onclick="setEnergy(4)"></div>
+      <div class="e-pip" onclick="setEnergy(5)"></div>
+    </div>
+  </div>
+
+  <!-- Data export/import -->
+  <div style="padding:6px 16px 10px;border-top:1px solid var(--border);flex-shrink:0">
+    <div style="font-size:9.5px;color:var(--text3);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px">Your Data</div>
+    <!-- Storage health — inside data box -->
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:9px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase">Storage</span>
+        <span id="storage-pct-label" style="font-size:9px;color:var(--text3);font-family:var(--ff-mono)">—</span>
+      </div>
+      <div class="storage-track">
+        <div class="storage-fill" id="storage-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button onclick="DSM.exportAndRecord()" style="flex:1;padding:6px 0;border-radius:var(--r-sm);background:var(--teal-soft);color:var(--teal);font-size:11px;font-weight:600;border:1px solid var(--teal-mid);cursor:pointer;transition:all var(--t);font-family:var(--ff-body)" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter=''">
+        ↓ Export
+      </button>
+      <button onclick="document.getElementById('import-file').click()" style="flex:1;padding:6px 0;border-radius:var(--r-sm);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:600;border:1px solid var(--border);cursor:pointer;transition:all var(--t);font-family:var(--ff-body)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--bg2)'">
+        ↑ Import
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+    </div>
+    <button onclick="document.getElementById('archive-file').click()" style="width:100%;padding:6px 0;border-radius:var(--r-sm);background:var(--amber-soft);color:var(--amber);font-size:11px;font-weight:600;border:1px solid var(--amber);cursor:pointer;transition:all var(--t);font-family:var(--ff-body);margin-bottom:6px" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter=''">
+      📦 Browse Archive
+    </button>
+    <input type="file" id="archive-file" accept=".json" style="display:none" onchange="ARCHIVE.load(this)">
+    <!-- Backup status pill — always visible, click to export -->
+    <button class="backup-pill bp-danger" id="backup-pill" onclick="DSM.exportAndRecord()">
+      <div class="bp-dot"></div>
+      <span id="backup-pill-label">No backup yet</span>
+    </button>
+  </div>
+
+  <div class="s-bottom">
+    <span class="s-bottom-label" id="theme-label">☀️ Calm mode</span>
+    <div class="toggle" id="theme-tog" onclick="toggleTheme()"><div class="toggle-knob"></div></div>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════ -->
+<main class="main">
+
+<!-- Archive mode banner — shown when browsing a historical file -->
+<div id="archive-banner">
+  <div class="ab-left">
+    <div class="ab-icon">📦</div>
+    <div>
+      <div class="ab-text">Viewing archive — your current data is untouched</div>
+      <div class="ab-sub" id="archive-banner-sub">Exported on —</div>
+    </div>
+  </div>
+  <div class="ab-actions">
+    <button class="ab-btn primary" onclick="ARCHIVE.restore()">↺ Restore this backup</button>
+    <button class="ab-btn ghost"   onclick="ARCHIVE.exit()">← Return to Today</button>
+  </div>
+</div>
+
+<!-- ─────────────────── ARCHIVE VIEW ─────────────────── -->
+<div class="view" id="view-archive">
+  <div class="view-head">
+    <div>
+      <div class="view-title">Archive Viewer</div>
+      <div class="view-sub" id="archive-view-sub">Read-only. Nothing here touches your current planner.</div>
+    </div>
+    <div class="view-acts">
+      <button class="btn btn-ghost" onclick="ARCHIVE.exit()">← Back to Today</button>
+    </div>
+  </div>
+  <div class="view-body">
+
+    <!-- Summary stats -->
+    <div class="arc-stats" id="arc-stats"></div>
+
+    <!-- Section tabs -->
+    <div class="archive-tabs" id="archive-tabs">
+      <button class="archive-tab active" onclick="ARCHIVE.showSection('tasks',this)">📋 Tasks</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('wins',this)">🏆 Wins</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('habits',this)">✨ Habits</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('reflections',this)">🔮 Reflections</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('dump',this)">🌀 Brain Dump</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('notnow',this)">🅿️ Not Now</button>
+      <button class="archive-tab" onclick="ARCHIVE.showSection('meds',this)">💊 Medications</button>
+    </div>
+
+    <!-- Tasks section -->
+    <div class="archive-section active" id="arc-sec-tasks">
+      <div class="card" id="arc-tasks-card"></div>
+    </div>
+
+    <!-- Wins section -->
+    <div class="archive-section" id="arc-sec-wins">
+      <div class="card" id="arc-wins-card"></div>
+    </div>
+
+    <!-- Habits section -->
+    <div class="archive-section" id="arc-sec-habits">
+      <div class="card arc-habits-table" id="arc-habits-card"></div>
+    </div>
+
+    <!-- Reflections section -->
+    <div class="archive-section" id="arc-sec-reflections">
+      <div id="arc-reflections-list"></div>
+    </div>
+
+    <!-- Brain Dump section -->
+    <div class="archive-section" id="arc-sec-dump">
+      <div class="card">
+        <div id="arc-dump-content"></div>
+      </div>
+    </div>
+
+    <!-- Not Now section -->
+    <div class="archive-section" id="arc-sec-notnow">
+      <div class="card" style="max-width:560px" id="arc-notnow-card"></div>
+    </div>
+
+    <!-- Medications section -->
+    <div class="archive-section" id="arc-sec-meds">
+      <div class="card" id="arc-meds-card"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────── TODAY ─────────────────── -->
+<div class="view active" id="view-today">
+  <div class="view-head">
+    <div>
+      <div class="view-title">Today</div>
+      <div class="view-sub" id="today-sub">Let's see what your brain needs.</div>
+    </div>
+    <div class="view-acts">
+      <button class="btn btn-ghost" onclick="openHowTo()" style="font-size:12px;opacity:0.7" title="How to use Drift">? Help</button>
+      <button class="btn btn-ghost" onclick="openModal('mod-timer')">⏱ Timer</button>
+      <button class="btn btn-primary" onclick="openModal('mod-task')">+ Add Task</button>
+    </div>
+  </div>
+  <div class="view-body">
+
+    <!-- One-thing banner -->
+    <div class="one-thing" id="one-thing-banner">
+      <div class="one-thing-icon" id="one-thing-icon">🎯</div>
+      <div style="flex:1">
+        <div class="one-thing-label">The one thing</div>
+        <div class="one-thing-q" id="one-thing-q">If you do nothing else today, what matters most?</div>
+        <input class="one-thing-input" id="one-thing" placeholder="Name it here…" oninput="onOneThing(this.value)">
+      </div>
+      <button class="one-thing-complete-btn" id="one-thing-complete" onclick="completeOneThing()" title="Mark complete">☐</button>
+    </div>
+
+    <div class="today-cols">
+
+      <!-- LEFT -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <!-- Tasks -->
+        <div class="card" style="display:flex;flex-direction:column;max-height:420px">
+          <div class="card-head" style="flex-shrink:0">
+            <div class="card-title">📋 Tasks <span id="task-count" style="font-weight:400;color:var(--text3);font-size:11px;font-family:var(--ff-body)"></span></div>
+            <button class="card-add" onclick="openModal('mod-task')">+</button>
+          </div>
+          <!-- Rollover notice -->
+          <div id="rollover-notice" style="display:none;padding:7px 14px;background:var(--lav-soft);font-size:11.5px;color:var(--lav);border-bottom:1px solid var(--border);flex-shrink:0">
+            🅿️ <strong id="rollover-count">0</strong> tasks carried forward from yesterday — no shame, just continuing ✦
+          </div>
+          <div id="task-list" style="overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:var(--border2) transparent">
+            <div class="empty" id="task-empty"><div class="empty-icon">🌿</div><div class="empty-text">Nothing yet — add your first task!</div></div>
+          </div>
+          <div class="task-add-row" style="flex-shrink:0;border-top:1px solid var(--border)">
+            <input class="task-input" id="quick-task" placeholder="Quick add — press Enter" onkeydown="if(e=event,e.key==='Enter')quickAddTask()">
+            <button class="task-submit" onclick="quickAddTask()">Add</button>
+          </div>
+        </div>
+
+        <!-- Distraction capture -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">💭 Distraction Capture</div>
+          </div>
+          <div class="dist-input-row">
+            <input class="dist-input" id="dist-input" placeholder="Brain wandering? Park it, come back later…" onkeydown="if(event.key==='Enter')addDist()">
+            <button class="dist-sub" onclick="addDist()">Park it</button>
+          </div>
+          <div id="dist-list">
+            <div class="empty" id="dist-empty" style="padding:10px 0"><div class="empty-text" style="font-size:12px">Captured thoughts won't derail you. 🧘</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <!-- Timer -->
+        <div class="timer-card" id="timer-card">
+          <div class="timer-drop-zone" id="timer-drop-zone">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;pointer-events:none" id="drop-hint">
+              <div style="background:var(--teal);color:white;padding:8px 16px;border-radius:100px;font-size:12px;font-weight:600">Drop to focus on this task ▶</div>
+            </div>
+          </div>
+          <!-- Timer done prompt -->
+          <div id="timer-done-prompt">
+            <div style="font-size:2rem">⏰</div>
+            <div class="tdp-title">Timer's up!<br>Did you finish<br><em id="tdp-task-name" style="color:var(--teal)"></em>?</div>
+            <div class="tdp-btns">
+              <button class="tdp-btn yes" onclick="timerDoneAnswer('yes')">✓ Yes, mark it done!</button>
+              <button class="tdp-btn more" onclick="timerDoneAnswer('more')">⏱ No, need 5 more mins</button>
+              <button class="tdp-btn keep" onclick="timerDoneAnswer('keep')">↩ No, keep on list</button>
+            </div>
+          </div>
+          <div class="timer-mode-lbl" id="timer-lbl">FOCUS SESSION</div>
+          <div class="timer-num" id="timer-num">25:00</div>
+          <div class="timer-task" id="timer-task">No task selected</div>
+          <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:0%"></div></div>
+          <div class="timer-btns">
+            <button class="t-btn" onclick="resetTimer()">↺</button>
+            <button class="t-btn go" id="timer-go" onclick="toggleTimer()">Start</button>
+            <button class="t-btn" onclick="skipTimer()">Skip</button>
+          </div>
+          <div class="timer-dots" id="timer-dots">
+            <div class="t-dot"></div><div class="t-dot"></div>
+            <div class="t-dot"></div><div class="t-dot"></div>
+          </div>
+          <!-- Hyperfocus guard -->
+          <div class="hg-row" id="hg-row">
+            <div class="hg-toggle" id="hg-tog" onclick="toggleHG()"><div class="hg-knob"></div></div>
+            <span>Hyperfocus guard <span style="opacity:0.6;font-size:10px">(alert every <span id="hg-mins">45</span>m)</span></span>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">⏰ Visual Timeline</div>
+            <button class="card-add" onclick="openModal('mod-block')">+</button>
+          </div>
+          <div style="padding:10px 12px 12px">
+            <div class="timeline" id="timeline"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── WEEK ─────────────────── -->
+<div class="view" id="view-week">
+  <div class="view-head">
+    <div><div class="view-title">This Week</div><div class="view-sub">The big picture. Breathe.</div></div>
+  </div>
+  <div class="view-body">
+    <div class="week-grid" id="week-grid"></div>
+  </div>
+</div>
+
+<!-- ─────────────────── MEDS ─────────────────── -->
+<div class="view" id="view-meds">
+  <div class="view-head">
+    <div><div class="view-title">Medication</div><div class="view-sub">No judgment. Just a reminder that you matter.</div></div>
+    <div class="view-acts"><button class="btn btn-primary" onclick="openModal('mod-med')">+ Add Med</button></div>
+  </div>
+  <div class="view-body">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head"><div class="card-title">💊 Today's Meds</div></div>
+      <div id="med-list"><div class="empty" id="med-empty"><div class="empty-icon">💊</div><div class="empty-text">Add your medications — we'll remind you each day.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">📝 Today's Notes</div></div>
+      <div style="padding:10px 14px">
+        <textarea class="m-input" id="med-notes" placeholder="How are the meds working today? Focus level, side effects, anything noteworthy…" rows="4" oninput="S.medNotes[today()]=this.value;save()" style="min-height:90px"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── BRAIN DUMP ─────────────────── -->
+<div class="view" id="view-dump">
+  <div class="view-head">
+    <div><div class="view-title">Brain Dump</div><div class="view-sub">Get it all out. No structure. No judgment. Just go.</div></div>
+    <div class="view-acts">
+      <button class="btn btn-ghost" onclick="openHowTo()" style="font-size:12px;opacity:0.7">? Help</button>
+      <button class="btn btn-ghost" onclick="sortDump()">🔀 Extract tasks</button>
+      <button class="btn btn-ghost" onclick="clearDump()">Clear</button>
+    </div>
+  </div>
+  <div class="view-body">
+    <div class="dump-layout">
+      <div class="card">
+        <textarea class="dump-ta" id="dump-ta" placeholder="Start anywhere. Worries, ideas, things you're scared to forget, things that are making you angry, plans, dreams, random facts about ants — all of it belongs here. No rules. ✨" oninput="dumpChange()" onfocus="dumpSavedPos=this.selectionStart" onkeyup="dumpSavedPos=this.selectionStart" onmouseup="dumpSavedPos=this.selectionStart" onclick="dumpSavedPos=this.selectionStart"></textarea>
+        <div class="dump-tools">
+          <button class="dump-btn" onmousedown="return prefixLine('→ ')">→ Action</button>
+          <button class="dump-btn" onmousedown="return prefixLine('• ')">• Thought</button>
+          <button class="dump-btn" onmousedown="return prefixLine('⚠ ')">⚠ Worry</button>
+          <button class="dump-btn" onmousedown="return prefixLine('? ')">? Question</button>
+          <button class="dump-btn" onmousedown="return prefixLine('💡 ')">💡 Idea</button>
+          <span class="dump-wc" id="dump-wc">0 words</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <div class="card-head"><div class="card-title">📌 Extracted Actions</div></div>
+          <div id="sorted-list"><div class="empty" id="sorted-empty"><div class="empty-icon">🗂</div><div class="empty-text">Click "Extract tasks" to pull out action items</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">💡 Prefixes guide</div></div>
+          <div style="padding:11px 14px;font-size:12px;color:var(--text2);line-height:2">
+            <code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:10.5px">→</code> Action item<br>
+            <code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:10.5px">•</code> General thought<br>
+            <code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:10.5px">⚠</code> Worry to process<br>
+            <code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:10.5px">?</code> Question to answer<br>
+            <code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:10.5px">💡</code> Idea to explore
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── NOT NOW ─────────────────── -->
+<div class="view" id="view-notnow">
+  <div class="view-head">
+    <div><div class="view-title">Not Now</div><div class="view-sub">Your brain has two time zones: Now and Not Now. This is the second one.</div></div>
+  </div>
+  <div class="view-body">
+    <div class="card" style="max-width:560px">
+      <div class="card-head"><div class="card-title">🅿️ Parked for later</div><button class="card-add" onclick="openModal('mod-notnow')">+</button></div>
+      <div id="notnow-list"><div class="empty" id="notnow-empty"><div class="empty-icon">🅿️</div><div class="empty-text">Things that matter — just not today. Park them here so your brain can let go.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── IMPULSE PAUSE ─────────────────── -->
+<div class="view" id="view-spend">
+  <div class="view-head">
+    <div><div class="view-title">Impulse Pause</div><div class="view-sub">Want to buy something? Park it for 48 hours. Your future self will thank you.</div></div>
+  </div>
+  <div class="view-body">
+    <div class="spend-hero">
+      <div class="spend-hero-icon">🛑</div>
+      <div>
+        <div class="spend-hero-title">Before you buy…</div>
+        <div class="spend-hero-sub">Name it. Wait 48 hours. See if you still want it.</div>
+      </div>
+      <input class="spend-hero-input" id="spend-input" placeholder="What do you want to buy?" onkeydown="if(event.key==='Enter')addSpend()">
+      <button class="spend-hero-btn" onclick="addSpend()">Park it</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">⏳ Waiting Period</div></div>
+      <div id="spend-list"><div class="empty" id="spend-empty"><div class="empty-icon">✨</div><div class="empty-text">Nothing parked — nice! Or add something above.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── HABITS ─────────────────── -->
+<div class="view" id="view-habits">
+  <div class="view-head">
+    <div><div class="view-title">Habits</div><div class="view-sub">Small and consistent beats perfect and abandoned. Always.</div></div>
+    <div class="view-acts"><button class="btn btn-primary" onclick="openModal('mod-habit')">+ Add Habit</button></div>
+  </div>
+  <div class="view-body">
+    <div class="card habit-table" id="habit-table"></div>
+  </div>
+</div>
+
+<!-- ─────────────────── REFLECTION ─────────────────── -->
+<div class="view" id="view-reflect">
+  <div class="view-head">
+    <div><div class="view-title">Weekly Reflection</div><div class="view-sub">Self-knowledge is the real productivity hack. Take 5 minutes.</div></div>
+    <div class="view-acts"><button class="btn btn-amber" onclick="saveReflect()">Save reflection</button></div>
+  </div>
+  <div class="view-body">
+    <div class="reflect-grid" id="reflect-grid">
+      <div class="reflect-prompt">
+        <div class="reflect-prompt-head">🔋 What drained me this week?</div>
+        <textarea class="reflect-ta" id="r-drain" placeholder="Be honest. What sucked energy? Tasks, people, situations…"></textarea>
+      </div>
+      <div class="reflect-prompt">
+        <div class="reflect-prompt-head">⚡ What energised me?</div>
+        <textarea class="reflect-ta" id="r-energy" placeholder="What made time fly? What felt easy or exciting?"></textarea>
+      </div>
+      <div class="reflect-prompt">
+        <div class="reflect-prompt-head">🔁 What would I do differently?</div>
+        <textarea class="reflect-ta" id="r-diff" placeholder="No self-criticism — just curious tweaks for next week."></textarea>
+      </div>
+      <div class="reflect-prompt">
+        <div class="reflect-prompt-head">🌟 One thing I'm proud of</div>
+        <textarea class="reflect-ta" id="r-proud" placeholder="It counts even if it was small. Especially if it was small."></textarea>
+      </div>
+      <div class="reflect-prompt" style="grid-column:1/-1">
+        <div class="reflect-prompt-head">🧠 How was my ADHD this week? What patterns do I notice?</div>
+        <textarea class="reflect-ta" id="r-adhd" placeholder="Time blindness? Hyperfocus? Rejection sensitivity? Emotional swings? Just notice — no judgment." style="min-height:70px"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────── WINS ─────────────────── -->
+<div class="view" id="view-wins">
+  <div class="view-head">
+    <div><div class="view-title">Wins & Gratitude</div><div class="view-sub">Your brain forgets the good stuff. This is your evidence archive.</div></div>
+  </div>
+  <div class="view-body">
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box"><div class="stat-num" id="st-done">0</div><div class="stat-lbl">Done today</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-streak">0</div><div class="stat-lbl">Day streak</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-wins">0</div><div class="stat-lbl">Total wins</div></div>
+    </div>
+    <div class="wins-layout">
+      <div class="card">
+        <div class="card-head"><div class="card-title">🏆 Recent Wins</div></div>
+        <div id="wins-list"><div class="empty" id="wins-empty"><div class="empty-icon">✨</div><div class="empty-text">Log your first win below.</div></div></div>
+        <div class="add-win-area">
+          <textarea class="add-win-ta" id="win-ta" placeholder="What went well? Even tiny things count — you showed up, you tried, you got out of bed. Log it all." rows="2"></textarea>
+          <div style="margin-top:8px"><button class="btn btn-amber" onclick="addWin()">Log win 🎉</button></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="affirmation-box">
+          <div class="aff-text" id="aff-text">"Your brain isn't broken. It's just tuned to a different frequency."</div>
+          <button class="aff-refresh" onclick="newAff()">↻ New reminder</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">📊 Week at a glance</div></div>
+          <div style="padding:13px 14px" id="wk-bars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- .shell -->
+
+<!-- ════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════ -->
+
+<!-- Add Task -->
+<div class="overlay" id="mod-task">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Task</div>
+      <button class="modal-close" onclick="closeModal('mod-task')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-field">
+        <div class="m-label">Task</div>
+        <input class="m-input" id="mt-text" placeholder="What needs doing?" onkeydown="if(event.key==='Enter')submitTask()">
+      </div>
+      <div class="m-field">
+        <div class="m-label">Priority</div>
+        <div style="display:flex;gap:6px">
+          <span class="p-opt urgent sel" id="mp-urgent" onclick="mPriority('urgent',this)">🔴 Urgent</span>
+          <span class="p-opt focus"      id="mp-focus"  onclick="mPriority('focus',this)">🔵 Focus</span>
+          <span class="p-opt later"      id="mp-later"  onclick="mPriority('later',this)">🔵 Later</span>
+        </div>
+      </div>
+      <div class="m-field">
+        <div class="m-label">Time estimate</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" id="mt-time-opts">
+          <span class="t-opt" onclick="mTime('5m',this)">5m</span>
+          <span class="t-opt" onclick="mTime('15m',this)">15m</span>
+          <span class="t-opt sel" onclick="mTime('30m',this)">30m</span>
+          <span class="t-opt" onclick="mTime('1h',this)">1h</span>
+          <span class="t-opt" onclick="mTime('2h',this)">2h</span>
+          <span class="t-opt" onclick="mTime('?',this)">I have no idea 🤷</span>
+        </div>
+      </div>
+      <div class="m-field">
+        <div class="m-label">Break into steps (one per line, optional)</div>
+        <textarea class="m-input" id="mt-steps" placeholder="e.g.&#10;Open the document&#10;Write one sentence&#10;Hit send" rows="4"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-task')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timer settings -->
+<div class="overlay" id="mod-timer">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">⏱ Timer Settings</div>
+      <button class="modal-close" onclick="closeModal('mod-timer')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-grid2">
+        <div class="m-field">
+          <div class="m-label">Focus (minutes)</div>
+          <input class="m-input" id="t-focus" type="number" value="25" min="1" max="90">
+        </div>
+        <div class="m-field">
+          <div class="m-label">Break (minutes)</div>
+          <input class="m-input" id="t-break" type="number" value="5" min="1" max="30">
+        </div>
+      </div>
+      <div class="m-field">
+        <div class="m-label">Hyperfocus guard (minutes)</div>
+        <input class="m-input" id="t-hg" type="number" value="45" min="10" max="120">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Fires an alert to eat, drink water, or move — even when you're in the zone.</div>
+      </div>
+      <div class="m-field">
+        <div class="m-label">Working on…</div>
+        <input class="m-input" id="t-task" placeholder="Task name (optional)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-timer')">Cancel</button>
+      <button class="btn btn-primary" onclick="applyTimer()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add time block -->
+<div class="overlay" id="mod-block">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Time Block</div>
+      <button class="modal-close" onclick="closeModal('mod-block')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-field"><div class="m-label">What</div><input class="m-input" id="b-what" placeholder="e.g. Deep work, Admin, Break, Lunch…"></div>
+      <div class="m-grid2">
+        <div class="m-field"><div class="m-label">Start</div><input class="m-input" id="b-start" type="time" value="09:00"></div>
+        <div class="m-field"><div class="m-label">End</div><input class="m-input" id="b-end" type="time" value="10:00"></div>
+      </div>
+      <div class="m-field">
+        <div class="m-label">Colour</div>
+        <div class="color-row">
+          <div class="color-opt sel" style="background:var(--teal)" onclick="setBC('c-teal',this)" id="bc-teal"></div>
+          <div class="color-opt" style="background:var(--green)" onclick="setBC('c-green',this)" id="bc-green"></div>
+          <div class="color-opt" style="background:var(--amber)" onclick="setBC('c-amber',this)" id="bc-amber"></div>
+          <div class="color-opt" style="background:var(--lav)" onclick="setBC('c-lav',this)" id="bc-lav"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-block')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitBlock()">Add Block</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medication -->
+<div class="overlay" id="mod-med">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Medication</div>
+      <button class="modal-close" onclick="closeModal('mod-med')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-field"><div class="m-label">Medication name</div><input class="m-input" id="med-name" placeholder="e.g. Adderall 20mg" onkeydown="if(event.key==='Enter')submitMed()"></div>
+      <div class="m-field"><div class="m-label">Time to take</div><input class="m-input" id="med-time" type="time" value="08:00"></div>
+      <div class="m-field"><div class="m-label">Notes (optional)</div><input class="m-input" id="med-note-field" placeholder="e.g. Take with food"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-med')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitMed()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Habit -->
+<div class="overlay" id="mod-habit">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Habit</div>
+      <button class="modal-close" onclick="closeModal('mod-habit')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-field"><div class="m-label">Habit</div><input class="m-input" id="h-name" placeholder="e.g. Drink water, Walk outside, Take meds" onkeydown="if(event.key==='Enter')submitHabit()"></div>
+      <div class="m-field">
+        <div class="m-label">Emoji</div>
+        <div class="emoji-row" id="emoji-row">
+          <span class="emoji-opt sel" onclick="pickEmoji(this,'💧')">💧</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'🚶')">🚶</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'💊')">💊</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'🧘')">🧘</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'📖')">📖</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'😴')">😴</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'✍️')">✍️</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'🍎')">🍎</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'🎯')">🎯</span>
+          <span class="emoji-opt" onclick="pickEmoji(this,'🌞')">🌞</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-habit')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitHabit()">Add Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Not Now modal -->
+<div class="overlay" id="mod-notnow">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Park for Later</div>
+      <button class="modal-close" onclick="closeModal('mod-notnow')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-field"><div class="m-label">What to park</div><input class="m-input" id="nn-text" placeholder="A task, idea, or commitment that isn't for now…" onkeydown="if(event.key==='Enter')submitNN()"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mod-notnow')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitNN()">Park it</button>
+    </div>
+  </div>
+</div>
+
+<!-- How To Guide Modal -->
+<div class="overlay" id="mod-howto">
+  <div class="modal" style="max-width:540px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal-head">
+      <div class="modal-title">🧠 How to Use Drift</div>
+      <button class="modal-close" onclick="closeModal('mod-howto')">×</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1">
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div style="background:var(--teal-pale);border:1px solid var(--teal-soft);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">🎯 The One Thing</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6">Every day, pick <em>one</em> task that matters most. This banner is your anchor — if everything else falls apart, doing this one thing counts as a win. Click the teal banner and type it in.</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:6px">✦ Click the checkbox on the banner to mark it complete and get a confetti reward!</div>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">📋 Tasks &amp; Timer</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6">Add tasks using the <strong>+ Add Task</strong> button or quick-add at the bottom. Every task has a priority and time estimate.</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:7px;line-height:1.7">
+            ▶ Click the <strong>▶ play button</strong> on any task to instantly link it to the timer.<br>
+            ▶ The timer will auto-set the duration from the task's estimate.<br>
+            ▶ Drag &amp; drop a task onto the timer circle to lock in and start focusing.<br>
+            ▶ When the timer ends, you'll be asked if the task is done.
+          </div>
+        </div>
+
+        <div style="background:var(--amber-pale);border:1px solid var(--amber-soft);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--amber);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">⏱ Hyperfocus Guard Timer</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6">The timer on the right is your Pomodoro + hyperfocus guard. Set it to 25 minutes (or your preferred focus sprint). Enable <strong>Hyperfocus guard</strong> to get a nudge every 45 mins to eat, drink water, and move.</div>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">🌀 Brain Dump</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6">Feeling overwhelmed? Open Brain Dump and write everything flooding your brain — no structure, no rules. Then use the prefix buttons to tag lines:</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:7px;line-height:1.9;font-family:var(--ff-mono)">
+            → Action item &nbsp;&nbsp; • Thought &nbsp;&nbsp; ⚠ Worry &nbsp;&nbsp; ? Question &nbsp;&nbsp; 💡 Idea
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:6px">Click <strong>"Extract tasks"</strong> to pull all → action lines into a list you can promote to Today.</div>
+        </div>
+
+        <div style="background:var(--lav-soft);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--lav);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">🅿️ Parking Lot Features</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6"><strong>💭 Distraction Capture</strong> — when your brain wanders mid-task, park the thought here instead of switching tasks.<br><br><strong>🅿️ Not Now</strong> — tasks that matter but not today. Your brain can let go once it's parked.<br><br><strong>🛑 Impulse Pause</strong> — want to buy something? Park it for 48 hours. See if you still want it then.</div>
+        </div>
+
+        <div style="background:var(--green-pale);border:1px solid var(--green-soft);border-radius:var(--r);padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">💾 Keeping Your Data Safe</div>
+          <div style="font-size:12.5px;color:var(--text);line-height:1.6">Drift saves everything to your browser's local storage — <em>nothing goes to a server</em>. Export a backup regularly using <strong>↓ Export</strong> in the sidebar. The backup pill shows your last export status.</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:6px">⚠ Clearing browser data will erase your planner — always keep a recent export!</div>
+        </div>
+
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="closeModal('mod-howto')">Got it — let's go! 🚀</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+const S = {
+  tasks:[], distractions:[], habits:[], wins:[],
+  medications:[], notNow:[], spendItems:[], timeBlocks:[],
+  weekExtra:{}, reflections:{}, medNotes:{},
+  dumpText:'', oneThing:'', oneThingDone:false,
+  checkin:null, energy:0, theme:'calm',
+  timerFocus:25, timerBreak:5, timerTask:'', hgMins:45, hgOn:false,
+  streak:0
+};
+
+// ════════════════════════════════════════════
+// PERSIST
+// ════════════════════════════════════════════
+function loadS() {
+  try {
+    const d = localStorage.getItem('drift_v2');
+    if (d) Object.assign(S, JSON.parse(d));
+    if (!S.tasks) S.tasks=[];
+    if (!S.habits) S.habits=[];
+    if (!S.habits.length) S.habits=[
+      {id:uid(),name:'Drink 8 glasses of water',emoji:'💧',checks:{}},
+      {id:uid(),name:'Take medication',emoji:'💊',checks:{}},
+      {id:uid(),name:'Go outside / move',emoji:'🚶',checks:{}},
+      {id:uid(),name:'Sleep before midnight',emoji:'😴',checks:{}},
+    ];
+    ['distractions','wins','medications','notNow','spendItems','timeBlocks'].forEach(k=>{ if(!S[k]) S[k]=[]; });
+    ['weekExtra','reflections','medNotes'].forEach(k=>{ if(!S[k]) S[k]={}; });
+    // Ensure all habits have checks object
+    S.habits.forEach(h=>{ if(!h.checks) h.checks={}; });
+  } catch(e){}
+}
+function save() { try { localStorage.setItem('drift_v2',JSON.stringify(S)); } catch(e){} }
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+// ════════════════════════════════════════════
+// DATES
+// ════════════════════════════════════════════
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function today() {
+  const d=new Date();
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+function p2(n) { return String(n).padStart(2,'0'); }
+function fmtD(d) { return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+
+function initDate() {
+  const d=new Date();
+  document.getElementById('s-day').textContent = d.getDate();
+  document.getElementById('s-datestr').textContent =
+    `${DAYS[d.getDay()].toUpperCase()} · ${MONTHS[d.getMonth()].toUpperCase()} ${d.getFullYear()}`;
+  document.getElementById('today-sub').textContent =
+    `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()} — how's your brain today?`;
+}
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+function go(name, el) {
+  // If in archive mode and navigating away, exit cleanly first
+  if(typeof ARCHIVE !== 'undefined' && ARCHIVE.isActive() && name !== 'archive') {
+    ARCHIVE.exit();
+    return;
+  }
+  // Archive view — just navigate, ARCHIVE.load() handles rendering
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const viewEl = document.getElementById('view-'+name);
+  if(viewEl) viewEl.classList.add('active');
+  if(el) el.classList.add('active');
+  if(name === 'archive') return; // Archive view is populated by ARCHIVE.load()
+  const renders = { week:renderWeek, habits:renderHabits, wins:renderWins, meds:renderMeds, notnow:renderNotNow, spend:renderSpend, dump:()=>{ const dt=document.getElementById('dump-ta'); if(dt&&dt.value!==S.dumpText) { dt.value=S.dumpText||''; dumpChange(); } } };
+  if(renders[name]) renders[name]();
+  if(name==='reflect') loadReflect();
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); setTimeout(()=>{ const f=document.querySelector('#'+id+' .m-input'); if(f) f.focus(); },80); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ════════════════════════════════════════════
+// TASKS
+// ════════════════════════════════════════════
+let mPri = 'urgent', mTimeEst = '30m';
+let tActiveTaskId = null; // currently linked task id — declared here so renderTasks can use it
+
+function mPriority(p,el) {
+  mPri=p;
+  document.querySelectorAll('[id^="mp-"]').forEach(e=>{
+    e.classList.remove('sel');
+    e.className = e.className.replace(/\b(urgent|focus|later)\b/,'').trim();
+  });
+  el.classList.add('sel',p);
+}
+function mTime(t,el) {
+  mTimeEst=t;
+  document.querySelectorAll('#mt-time-opts .t-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function submitTask() {
+  const text = document.getElementById('mt-text').value.trim();
+  if(!text) return;
+  const stepsRaw = document.getElementById('mt-steps').value.trim();
+  const subtasks = stepsRaw ? stepsRaw.split('\n').filter(s=>s.trim()).map(s=>({id:uid(),text:s.trim(),done:false})) : [];
+  S.tasks.unshift({id:uid(), text, priority:mPri, est:mTimeEst, done:false, date:today(), subtasks, rolled:false});
+  DSM.recordChange();
+  save();
+  document.getElementById('mt-text').value='';
+  document.getElementById('mt-steps').value='';
+  closeModal('mod-task');
+  renderTasks();
+  toast('Task added ✓');
+}
+
+function quickAddTask() {
+  const input = document.getElementById('quick-task');
+  const text = input.value.trim();
+  if(!text) return;
+  S.tasks.unshift({id:uid(), text, priority:'focus', est:'?', done:false, date:today(), subtasks:[], rolled:false});
+  DSM.recordChange();
+  save(); input.value='';
+  renderTasks();
+}
+
+function rolloverTasks() {
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const yKey = fmtD(yest);
+  const tKey = today();
+  const unfinished = S.tasks.filter(t=>t.date===yKey && !t.done);
+  unfinished.forEach(t=>{
+    const exists = S.tasks.find(x=>x.date===tKey && x.text===t.text);
+    if(!exists) S.tasks.push({...t, id:uid(), date:tKey, rolled:true});
+  });
+  save();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  const todayT = S.tasks.filter(t=>t.date===today());
+  document.getElementById('task-empty').style.display = todayT.length?'none':'block';
+
+  const rolled = todayT.filter(t=>t.rolled && !t.done).length;
+  const notice = document.getElementById('rollover-notice');
+  notice.style.display = rolled>0 ? 'block':'none';
+  if(rolled>0) document.getElementById('rollover-count').textContent = rolled;
+
+  list.querySelectorAll('.task-item').forEach(e=>e.remove());
+
+  const order={urgent:0,focus:1,later:2};
+  [...todayT].sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    return (order[a.priority]||1)-(order[b.priority]||1);
+  }).forEach(task=>{
+    const el=document.createElement('div');
+    el.dataset.id=task.id;
+    const isFocusing = tActiveTaskId === task.id;
+    const hasSubs=task.subtasks&&task.subtasks.length>0;
+    const doneSubs=hasSubs?task.subtasks.filter(s=>s.done).length:0;
+    const labels={urgent:'🔴 Urgent',focus:'🔵 Focus',later:'⚪ Later'};
+    el.className='task-item'+(task.done?' done':'')+(task.rolled?' rolled':'')+(isFocusing?' focusing':'');
+    el.draggable = !task.done;
+    el.innerHTML=`
+      <div class="task-check ${task.done?'done':''}" onclick="toggleTask('${task.id}')"></div>
+      <div class="task-body">
+        <div class="task-text">${esc(task.text)}</div>
+        <div class="task-meta">
+          <span class="tag tag-${task.priority}">${labels[task.priority]||task.priority}</span>
+          ${task.est&&task.est!=='?'?`<span class="task-time">⏱ ${task.est}</span>`:''}
+          ${isFocusing?'<span class="tag" style="background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal-mid)">⏱ Focusing…</span>':''}
+          ${task.rolled?'<span class="tag tag-rolled">↩ carried forward</span>':''}
+          ${hasSubs?`<span class="task-expand" onclick="toggleSubs('${task.id}',this)">${doneSubs}/${task.subtasks.length} ▾</span>`:''}
+        </div>
+        ${hasSubs?`<div class="subtask-list" id="subs-${task.id}">
+          ${task.subtasks.map(s=>`<div class="subtask-item ${s.done?'done':''}" data-sid="${s.id}">
+            <div class="s-check ${s.done?'done':''}" onclick="toggleSub('${task.id}','${s.id}')"></div>
+            <div class="subtask-text">${esc(s.text)}</div>
+          </div>`).join('')}
+        </div>`:''}
+      </div>
+      ${!task.done?`<button class="task-play" onclick="playTask('${task.id}')" title="Focus on this task">▶</button>`:''}
+      <button class="task-del" onclick="delTask('${task.id}')">✕</button>
+    `;
+    // Drag to timer
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', task.id);
+      e.dataTransfer.effectAllowed = 'link';
+      el.style.opacity = '0.5';
+    });
+    el.addEventListener('dragend', () => { el.style.opacity = ''; });
+    list.appendChild(el);
+  });
+
+  const undone=todayT.filter(t=>!t.done).length;
+  document.getElementById('badge-today').textContent=undone;
+  document.getElementById('task-count').textContent=`${todayT.length} task${todayT.length!==1?'s':''}`;
+  document.getElementById('st-done').textContent=todayT.filter(t=>t.done).length;
+}
+
+function toggleTask(id) {
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  t.done=!t.done; save(); renderTasks();
+  if(t.done) toast('✓ Done! Your brain is winning.');
+}
+function toggleSubs(tid,el) {
+  const list=document.getElementById('subs-'+tid); if(!list) return;
+  const open=list.classList.toggle('open');
+  el.textContent=el.textContent.replace(/[▾▸]/,open?'▾':'▸');
+}
+function toggleSub(tid,sid) {
+  const t=S.tasks.find(x=>x.id===tid); if(!t) return;
+  const s=t.subtasks.find(x=>x.id===sid); if(!s) return;
+  s.done=!s.done; save(); renderTasks();
+  document.getElementById('subs-'+tid)?.classList.add('open');
+}
+function delTask(id) { S.tasks=S.tasks.filter(x=>x.id!==id); DSM.recordChange(); save(); renderTasks(); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ════════════════════════════════════════════
+// DISTRACTIONS
+// ════════════════════════════════════════════
+function addDist() {
+  const inp=document.getElementById('dist-input');
+  const text=inp.value.trim(); if(!text) return;
+  S.distractions.push({id:uid(),text,date:today()});
+  save(); inp.value=''; renderDist();
+}
+function renderDist() {
+  const list=document.getElementById('dist-list');
+  const items=S.distractions.filter(d=>d.date===today());
+  document.getElementById('dist-empty').style.display=items.length?'none':'block';
+  list.querySelectorAll('.dist-item').forEach(e=>e.remove());
+  items.slice(-6).reverse().forEach(d=>{
+    const el=document.createElement('div');
+    el.className='dist-item';
+    el.innerHTML=`<div class="dist-dot"></div><span style="flex:1">${esc(d.text)}</span><span class="dist-promote" onclick="promDist('${d.id}')">→ Task</span>`;
+    list.appendChild(el);
+  });
+}
+function promDist(id) {
+  const d=S.distractions.find(x=>x.id===id); if(!d) return;
+  S.tasks.unshift({id:uid(),text:d.text,priority:'later',est:'?',done:false,date:today(),subtasks:[],rolled:false});
+  S.distractions=S.distractions.filter(x=>x.id!==id);
+  save(); renderDist(); renderTasks(); toast('Moved to tasks ✓');
+}
+
+// ════════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════════
+let tInterval=null, tRunning=false, tSecs=25*60, tTotal=25*60, tMode='focus', tSessions=0;
+let hgInterval=null, hgSecs=0;
+
+function applyTimer() {
+  S.timerFocus=parseInt(document.getElementById('t-focus').value)||25;
+  S.timerBreak=parseInt(document.getElementById('t-break').value)||5;
+  S.hgMins=parseInt(document.getElementById('t-hg').value)||45;
+  S.timerTask=document.getElementById('t-task').value.trim();
+  save(); resetTimer(); closeModal('mod-timer');
+  document.getElementById('hg-mins').textContent=S.hgMins;
+  document.getElementById('timer-task').textContent=S.timerTask||'No task selected';
+}
+
+// Play a specific task in the timer
+function playTask(id) {
+  const task = S.tasks.find(x=>x.id===id); if(!task) return;
+  tActiveTaskId = id;
+  S.timerTask = task.text;
+  // Parse estimate into minutes
+  const estMap = {'5m':5,'15m':15,'30m':30,'1h':60,'2h':120};
+  if(task.est && estMap[task.est]) {
+    S.timerFocus = estMap[task.est];
+  }
+  save();
+  resetTimer();
+  document.getElementById('timer-task').textContent = task.text;
+  // Auto-scroll / navigate to timer
+  const timerCard = document.querySelector('.timer-card');
+  if(timerCard) timerCard.scrollIntoView({behavior:'smooth',block:'center'});
+  // Auto-start
+  setTimeout(()=>{ if(!tRunning) toggleTimer(); }, 400);
+  renderTasks(); // refresh focusing state
+  toast(`▶ Focusing on: ${task.text}`);
+}
+
+function toggleTimer() {
+  if(tRunning) { clearInterval(tInterval); tRunning=false; document.getElementById('timer-go').textContent='Resume'; }
+  else { tRunning=true; document.getElementById('timer-go').textContent='Pause'; tInterval=setInterval(tickT,1000); }
+}
+function tickT() {
+  tSecs--;
+  updateTimerUI();
+  if(tSecs<=0) {
+    clearInterval(tInterval); tRunning=false;
+    if(tMode==='focus') {
+      tSessions++; updateDots();
+      // Show completion prompt if linked to a task
+      if(tActiveTaskId) {
+        showTimerDonePrompt();
+      } else {
+        tMode='break'; tSecs=S.timerBreak*60; tTotal=S.timerBreak*60;
+        document.getElementById('timer-lbl').textContent='BREAK TIME ☕';
+        document.getElementById('timer-go').textContent='Start Break';
+        toast('Focus done! Take a break 🌿');
+        updateTimerUI();
+      }
+    } else {
+      tMode='focus'; tSecs=S.timerFocus*60; tTotal=S.timerFocus*60;
+      document.getElementById('timer-lbl').textContent='FOCUS SESSION';
+      document.getElementById('timer-go').textContent='Start Focus';
+      toast('Break over — ready to focus?');
+      updateTimerUI();
+    }
+  }
+}
+
+function showTimerDonePrompt() {
+  const task = S.tasks.find(x=>x.id===tActiveTaskId);
+  const name = task ? task.text : S.timerTask || 'that task';
+  const prompt = document.getElementById('timer-done-prompt');
+  document.getElementById('tdp-task-name').textContent = name.length>35 ? name.slice(0,35)+'…' : name;
+  prompt.classList.add('show');
+}
+
+function timerDoneAnswer(choice) {
+  const prompt = document.getElementById('timer-done-prompt');
+  prompt.classList.remove('show');
+  if(choice==='yes') {
+    if(tActiveTaskId) {
+      const t=S.tasks.find(x=>x.id===tActiveTaskId);
+      if(t && !t.done) { t.done=true; save(); renderTasks(); toast('✓ Task complete! Your brain is winning. 🏆'); }
+    }
+    tActiveTaskId=null; S.timerTask='';
+    // Go to break
+    tMode='break'; tSecs=S.timerBreak*60; tTotal=S.timerBreak*60;
+    document.getElementById('timer-lbl').textContent='BREAK TIME ☕';
+    document.getElementById('timer-go').textContent='Start Break';
+    document.getElementById('timer-task').textContent='No task selected';
+    updateTimerUI();
+  } else if(choice==='more') {
+    // Add 5 more minutes and restart
+    tMode='focus'; tSecs=5*60; tTotal=5*60;
+    document.getElementById('timer-lbl').textContent='FOCUS SESSION';
+    document.getElementById('timer-go').textContent='Pause';
+    tRunning=true; tInterval=setInterval(tickT,1000);
+    updateTimerUI();
+    toast('5 more minutes — you got this!');
+  } else {
+    // Keep on list, go to break
+    tActiveTaskId=null; S.timerTask='';
+    tMode='break'; tSecs=S.timerBreak*60; tTotal=S.timerBreak*60;
+    document.getElementById('timer-lbl').textContent='BREAK TIME ☕';
+    document.getElementById('timer-go').textContent='Start Break';
+    document.getElementById('timer-task').textContent='No task selected';
+    renderTasks();
+    updateTimerUI();
+    toast('Task kept on list. Take a break! 🌿');
+  }
+}
+
+function resetTimer() {
+  clearInterval(tInterval); tRunning=false; tMode='focus';
+  tSecs=S.timerFocus*60; tTotal=S.timerFocus*60;
+  document.getElementById('timer-go').textContent='Start';
+  document.getElementById('timer-lbl').textContent='FOCUS SESSION';
+  document.getElementById('timer-task').textContent=S.timerTask||'No task selected';
+  document.getElementById('hg-mins').textContent=S.hgMins;
+  document.getElementById('timer-done-prompt')?.classList.remove('show');
+  updateTimerUI();
+}
+function skipTimer() {
+  clearInterval(tInterval); tRunning=false; tMode='focus';
+  tSecs=S.timerFocus*60; tTotal=S.timerFocus*60;
+  tActiveTaskId=null;
+  document.getElementById('timer-go').textContent='Start';
+  document.getElementById('timer-lbl').textContent='FOCUS SESSION';
+  document.getElementById('timer-done-prompt')?.classList.remove('show');
+  renderTasks();
+  updateTimerUI();
+}
+function updateTimerUI() {
+  const m=Math.floor(tSecs/60), s=tSecs%60;
+  document.getElementById('timer-num').textContent=`${p2(m)}:${p2(s)}`;
+  const pct=tTotal>0?((tTotal-tSecs)/tTotal)*100:0;
+  document.getElementById('timer-bar').style.width=pct+'%';
+  // Pulse the "now" timeline dot if timer running and task active
+  document.querySelectorAll('.tl-dot.now').forEach(d=>{
+    d.style.boxShadow = (tRunning && tActiveTaskId) ? '0 0 0 5px var(--teal-soft), 0 0 12px var(--teal)' : '';
+  });
+}
+function updateDots() {
+  document.querySelectorAll('.t-dot').forEach((d,i)=>d.classList.toggle('done',i<(tSessions%4)));
+}
+
+// Drag-and-drop task onto timer
+function initTimerDrop() {
+  const card = document.querySelector('.timer-card');
+  if(!card) return;
+  const hint = document.getElementById('drop-hint');
+  card.addEventListener('dragover', e => {
+    e.preventDefault(); card.classList.add('drag-over');
+    if(hint) hint.style.opacity='1';
+  });
+  card.addEventListener('dragleave', () => {
+    card.classList.remove('drag-over');
+    if(hint) hint.style.opacity='0';
+  });
+  card.addEventListener('drop', e => {
+    e.preventDefault(); card.classList.remove('drag-over');
+    if(hint) hint.style.opacity='0';
+    const id = e.dataTransfer.getData('text/plain');
+    if(id) playTask(id);
+  });
+}
+
+// Hyperfocus guard
+function toggleHG() {
+  S.hgOn=!S.hgOn; save();
+  const tog=document.getElementById('hg-tog');
+  const row=document.getElementById('hg-row');
+  tog.classList.toggle('on',S.hgOn);
+  row.classList.toggle('on',S.hgOn);
+  if(S.hgOn) {
+    hgSecs=S.hgMins*60;
+    hgInterval=setInterval(()=>{
+      hgSecs--;
+      if(hgSecs<=0) {
+        hgSecs=S.hgMins*60;
+        toast('🍎 Hyperfocus guard: eat, drink water, move your body!');
+      }
+    },1000);
+  } else { clearInterval(hgInterval); }
+}
+
+// ════════════════════════════════════════════
+// VISUAL TIMELINE
+// ════════════════════════════════════════════
+let bColor='c-teal';
+function setBC(c,el) {
+  bColor=c;
+  document.querySelectorAll('[id^="bc-"]').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function submitBlock() {
+  const what=document.getElementById('b-what').value.trim(); if(!what) return;
+  const start=document.getElementById('b-start').value;
+  const end=document.getElementById('b-end').value;
+  S.timeBlocks.push({id:uid(),what,start,end,color:bColor,date:today()});
+  save(); closeModal('mod-block'); renderTimeline(); bColor='c-teal';
+}
+function renderTimeline() {
+  const c=document.getElementById('timeline'); c.innerHTML='';
+  const now=new Date(), nowH=now.getHours();
+  const todayBlocks=S.timeBlocks.filter(b=>b.date===today()).sort((a,b)=>a.start.localeCompare(b.start));
+  const hours=[7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+  hours.forEach(h=>{
+    const label=h<12?h+'am':h===12?'12pm':(h-12)+'pm';
+    const blocks=todayBlocks.filter(b=>parseInt(b.start.split(':')[0])===h);
+    const isNow=h===nowH;
+    const slot=document.createElement('div');
+    slot.className='tl-hour';
+    slot.innerHTML=`
+      <div class="tl-label">${label}</div>
+      <div class="tl-spine"><div class="tl-dot ${isNow?'now':''}"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        ${blocks.map(b=>`<div class="tl-block ${b.color}">
+          <div class="tl-block-title">${esc(b.what)}</div>
+          <div class="tl-block-time">${b.start}–${b.end}</div>
+        </div>`).join('')}
+        ${blocks.length===0?`<div class="tl-add" onclick="openModal('mod-block')">+ block</div>`:''}
+      </div>
+    `;
+    c.appendChild(slot);
+  });
+}
+
+// ════════════════════════════════════════════
+// WEEK VIEW
+// ════════════════════════════════════════════
+function renderWeek() {
+  const c=document.getElementById('week-grid'); c.innerHTML='';
+  const d=new Date(), dow=d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-dow+1);
+  for(let i=0;i<7;i++) {
+    const day=new Date(mon); day.setDate(mon.getDate()+i);
+    const key=fmtD(day), isT=key===today();
+    const tasks=S.tasks.filter(t=>t.date===key);
+    const extra=S.weekExtra[key]||[];
+    const col=document.createElement('div');
+    col.className='week-col'+(isT?' today':'');
+    col.innerHTML=`<div class="week-col-head">
+        <div class="week-day-name">${SDAYS[day.getDay()]}</div>
+        <div class="week-day-num">${day.getDate()}</div>
+      </div>
+      <div class="week-tasks">
+        ${tasks.map(t=>`<div class="week-chip ${t.done?'done':''}">
+          <div class="w-dot ${t.priority}"></div>
+          ${esc(t.text.length>20?t.text.slice(0,20)+'…':t.text)}
+        </div>`).join('')}
+        ${extra.map(t=>`<div class="week-chip"><div class="w-dot"></div>${esc(t.length>20?t.slice(0,20)+'…':t)}</div>`).join('')}
+        <button class="week-add" onclick="addWeekExtra('${key}')">+ add</button>
+      </div>`;
+    c.appendChild(col);
+  }
+}
+function addWeekExtra(key) {
+  const t=prompt('Add task for this day:'); if(!t||!t.trim()) return;
+  if(!S.weekExtra[key]) S.weekExtra[key]=[];
+  S.weekExtra[key].push(t.trim()); save(); renderWeek();
+}
+
+// ════════════════════════════════════════════
+// MEDICATION
+// ════════════════════════════════════════════
+function submitMed() {
+  const name=document.getElementById('med-name').value.trim(); if(!name) return;
+  S.medications.push({id:uid(),name,time:document.getElementById('med-time').value,note:document.getElementById('med-note-field').value.trim(),checks:{}});
+  DSM.recordChange();
+  save(); document.getElementById('med-name').value=''; closeModal('mod-med'); renderMeds(); toast('Medication added ✓');
+}
+function renderMeds() {
+  const list=document.getElementById('med-list');
+  document.getElementById('med-empty').style.display=S.medications.length?'none':'block';
+  list.querySelectorAll('.med-item').forEach(e=>e.remove());
+  const t=today();
+  S.medications.forEach(m=>{
+    const done=!!(m.checks[t]);
+    const el=document.createElement('div');
+    el.className='med-item';
+    el.innerHTML=`
+      <div class="med-check ${done?'done':''}" onclick="toggleMed('${m.id}')">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div class="med-name">${esc(m.name)}</div>
+        ${m.note?`<div style="font-size:11px;color:var(--text3)">${esc(m.note)}</div>`:''}
+      </div>
+      <div class="med-time">${m.time}</div>
+      <button class="med-del" onclick="delMed('${m.id}')">✕</button>
+    `;
+    list.appendChild(el);
+  });
+  const ta=document.getElementById('med-notes');
+  ta.value=S.medNotes[today()]||'';
+}
+function toggleMed(id) {
+  const m=S.medications.find(x=>x.id===id); if(!m) return;
+  m.checks[today()]=!m.checks[today()]; save(); renderMeds();
+  if(m.checks[today()]) toast(`💊 ${m.name} — taken ✓`);
+}
+function delMed(id) { S.medications=S.medications.filter(x=>x.id!==id); DSM.recordChange(); save(); renderMeds(); }
+
+// ════════════════════════════════════════════
+// NOT NOW
+// ════════════════════════════════════════════
+function submitNN() {
+  const text=document.getElementById('nn-text').value.trim(); if(!text) return;
+  S.notNow.push({id:uid(),text,date:today()});
+  DSM.recordChange();
+  save(); document.getElementById('nn-text').value=''; closeModal('mod-notnow'); renderNotNow(); toast('Parked ✓');
+}
+function renderNotNow() {
+  const list=document.getElementById('notnow-list');
+  document.getElementById('notnow-empty').style.display=S.notNow.length?'none':'block';
+  list.querySelectorAll('.notnow-item').forEach(e=>e.remove());
+  S.notNow.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='notnow-item';
+    el.innerHTML=`<div class="notnow-bullet"></div><span style="flex:1">${esc(n.text)}</span>
+      <span class="notnow-promote" onclick="promoteNN('${n.id}')">→ Today</span>
+      <span class="notnow-del" onclick="delNN('${n.id}')">✕</span>`;
+    list.appendChild(el);
+  });
+}
+function promoteNN(id) {
+  const n=S.notNow.find(x=>x.id===id); if(!n) return;
+  S.tasks.unshift({id:uid(),text:n.text,priority:'focus',est:'?',done:false,date:today(),subtasks:[],rolled:false});
+  S.notNow=S.notNow.filter(x=>x.id!==id); save(); renderNotNow(); renderTasks(); toast('Moved to today ✓');
+}
+function delNN(id) { S.notNow=S.notNow.filter(x=>x.id!==id); save(); renderNotNow(); }
+
+// ════════════════════════════════════════════
+// IMPULSE SPEND
+// ════════════════════════════════════════════
+function addSpend() {
+  const inp=document.getElementById('spend-input');
+  const name=inp.value.trim(); if(!name) return;
+  S.spendItems.push({id:uid(),name,added:Date.now()});
+  DSM.recordChange();
+  save(); inp.value=''; renderSpend(); toast('Parked for 48 hours 🛑');
+}
+function renderSpend() {
+  const list=document.getElementById('spend-list');
+  document.getElementById('spend-empty').style.display=S.spendItems.length?'none':'block';
+  list.querySelectorAll('.spend-item').forEach(e=>e.remove());
+  const now=Date.now();
+  S.spendItems.forEach(s=>{
+    const elapsed=now-s.added, wait=48*3600*1000;
+    const remaining=Math.max(0,wait-elapsed);
+    const hours=Math.floor(remaining/3600000), mins=Math.floor((remaining%3600000)/60000);
+    let cls='hot', label='';
+    if(remaining<=0) { cls='cool'; label='✓ 48h passed — do you still want it?'; }
+    else if(remaining<12*3600000) { cls='warm'; label=`${hours}h ${mins}m remaining`; }
+    else { cls='hot'; label=`${hours}h ${mins}m remaining`; }
+    const el=document.createElement('div');
+    el.className='spend-item';
+    el.innerHTML=`<div class="spend-icon">🛑</div>
+      <div class="spend-body">
+        <div class="spend-name">${esc(s.name)}</div>
+        <div class="spend-timer ${cls}">${label}</div>
+      </div>
+      <button class="spend-del" onclick="delSpend('${s.id}')">✕</button>`;
+    list.appendChild(el);
+  });
+}
+function delSpend(id) { S.spendItems=S.spendItems.filter(x=>x.id!==id); save(); renderSpend(); }
+
+// ════════════════════════════════════════════
+// BRAIN DUMP
+// ════════════════════════════════════════════
+function dumpChange() {
+  const ta=document.getElementById('dump-ta');
+  S.dumpText=ta.value; save();
+  const w=ta.value.trim().split(/\s+/).filter(x=>x).length;
+  document.getElementById('dump-wc').textContent=w+' word'+(w!==1?'s':'');
+  // Auto-grow fallback for browsers without field-sizing support
+  ta.style.height='auto';
+  ta.style.height=Math.max(280, ta.scrollHeight)+'px';
+}
+
+let dumpSavedPos = 0;
+
+// Called via onmousedown return false — textarea never loses focus so selectionStart is live
+function prefixLine(p) {
+  const ta = document.getElementById('dump-ta');
+  // selectionStart is still valid because onmousedown + return false prevents blur
+  const pos = ta.selectionStart;
+  const val = ta.value;
+  const ls = val.lastIndexOf('\n', pos - 1) + 1;
+  const le = val.indexOf('\n', pos);
+  const lineEnd = le === -1 ? val.length : le;
+  const line = val.slice(ls, lineEnd);
+  const allPrefixes = ['→ ', '• ', '⚠ ', '? ', '💡 '];
+  let clean = line;
+  for (const ep of allPrefixes) { if (clean.startsWith(ep)) { clean = clean.slice(ep.length); break; } }
+  const toggling = line.startsWith(p) && clean === line.slice(p.length);
+  const newLine = toggling ? clean : p + clean;
+  ta.value = val.slice(0, ls) + newLine + val.slice(lineEnd);
+  const newPos = ls + newLine.length - (toggling ? 0 : (newLine.length - clean.length - (pos - ls - (line.length - clean.length))));
+  ta.selectionStart = ta.selectionEnd = Math.max(ls, Math.min(ls + newLine.length, ls + p.length + Math.max(0, pos - ls - (line.length - clean.length))));
+  dumpChange();
+  return false; // prevents default AND stops blur
+}
+
+// keep old name working too
+function prefix(p) { return prefixLine(p); }
+function sortDump() {
+  const lines=document.getElementById('dump-ta').value.split('\n').filter(l=>l.trim());
+  const actions=lines.filter(l=>l.startsWith('→')||l.startsWith('>'));
+  const c=document.getElementById('sorted-list');
+  document.getElementById('sorted-empty').style.display=actions.length?'none':'block';
+  c.querySelectorAll('div:not(#sorted-empty)').forEach(e=>e.remove());
+  if(!actions.length) { toast('No → actions found. Start lines with → to mark them.'); return; }
+  actions.forEach(a=>{
+    const el=document.createElement('div');
+    el.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text2)';
+    const clean=a.replace(/^[→>]\s*/,'');
+    el.innerHTML=`<div style="width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0"></div>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(clean)}">${esc(clean)}</span>
+      <span onclick="promDump('${encodeURIComponent(clean)}',this)" style="font-size:10px;padding:2px 8px;border-radius:100px;background:var(--green-soft);color:var(--green);cursor:pointer;white-space:nowrap;flex-shrink:0">+ Task</span>`;
+    c.appendChild(el);
+  });
+}
+function promDump(enc,btn) {
+  const text=decodeURIComponent(enc);
+  S.tasks.unshift({id:uid(),text,priority:'later',est:'?',done:false,date:today(),subtasks:[],rolled:false});
+  save(); renderTasks();
+  btn.textContent='✓ Added'; btn.style.background='var(--green-soft)'; btn.style.color='var(--green)';
+  toast('Added to tasks ✓');
+}
+function clearDump() { if(!confirm('Clear brain dump?')) return; document.getElementById('dump-ta').value=''; S.dumpText=''; save(); document.getElementById('dump-wc').textContent='0 words'; }
+
+// ════════════════════════════════════════════
+// HABITS
+// ════════════════════════════════════════════
+let hEmoji='💧';
+function pickEmoji(el,e) {
+  hEmoji=e;
+  document.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function submitHabit() {
+  const name=document.getElementById('h-name').value.trim(); if(!name) return;
+  S.habits.push({id:uid(),name,emoji:hEmoji,checks:{}}); DSM.recordChange(); save();
+  document.getElementById('h-name').value=''; closeModal('mod-habit'); renderHabits(); toast('Habit added ✓');
+}
+function renderHabits() {
+  const table=document.getElementById('habit-table'); table.innerHTML='';
+  const d=new Date(), dow=d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-dow+1);
+  const days=[];
+  for(let i=0;i<7;i++) { const x=new Date(mon); x.setDate(mon.getDate()+i); days.push({date:fmtD(x),name:SDAYS[x.getDay()],isT:fmtD(x)===today()}); }
+
+  const head=document.createElement('div');
+  head.className='habit-head';
+  head.innerHTML=`<div class="habit-th">Habit</div>`+days.map(d=>`<div class="habit-th ${d.isT?'today-h':''}">${d.name}${d.isT?' ✦':''}</div>`).join('');
+  table.appendChild(head);
+
+  S.habits.forEach(h=>{
+    const row=document.createElement('div'); row.className='habit-row';
+    const streak=calcStreak(h);
+    row.innerHTML=`<div class="habit-name-cell">
+        <div class="h-emoji">${h.emoji}</div>
+        <div class="h-name-wrap">
+          <div class="h-name">${esc(h.name)}</div>
+          <div class="h-streak">${streak>0?'🔥 '+streak+' day streak':'Start today!'}</div>
+        </div>
+      </div>
+      ${days.map(d=>`<div class="habit-cell ${d.isT?'today-h':''}" onclick="tickHabit('${h.id}','${d.date}')">
+        <div class="h-tick ${h.checks[d.date]?'on':''}"></div>
+      </div>`).join('')}`;
+    table.appendChild(row);
+  });
+
+  const addRow=document.createElement('div');
+  addRow.style.cssText='padding:10px 14px;border-top:1px solid var(--border)';
+  addRow.innerHTML=`<button class="btn btn-ghost" onclick="openModal('mod-habit')">+ Add Habit</button>`;
+  table.appendChild(addRow);
+}
+function tickHabit(hid,date) {
+  const h=S.habits.find(x=>x.id===hid); if(!h) return;
+  h.checks[date]=!h.checks[date]; save(); renderHabits();
+  if(h.checks[date]) toast('✓ Habit done!');
+}
+function calcStreak(h) {
+  if(!h.checks) h.checks={};
+  let s=0; const d=new Date(); d.setDate(d.getDate()-1);
+  for(let i=0;i<365;i++) {
+    if(h.checks[fmtD(d)]) { s++; d.setDate(d.getDate()-1); } else break;
+  }
+  if(h.checks[today()]) s++;
+  return s;
+}
+
+// ════════════════════════════════════════════
+// REFLECTION
+// ════════════════════════════════════════════
+function loadReflect() {
+  const wk=getWeekKey();
+  const r=S.reflections[wk]||{};
+  ['drain','energy','diff','proud','adhd'].forEach(k=>{ const el=document.getElementById('r-'+k); if(el) el.value=r[k]||''; });
+}
+function saveReflect() {
+  const wk=getWeekKey();
+  S.reflections[wk]={
+    drain:document.getElementById('r-drain').value,
+    energy:document.getElementById('r-energy').value,
+    diff:document.getElementById('r-diff').value,
+    proud:document.getElementById('r-proud').value,
+    adhd:document.getElementById('r-adhd').value,
+  };
+  save(); toast('Reflection saved ✓');
+}
+function getWeekKey() {
+  const d=new Date(), dow=d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-dow+1);
+  return fmtD(mon);
+}
+
+// ════════════════════════════════════════════
+// WINS
+// ════════════════════════════════════════════
+const AFFS=[
+  '"Your brain isn\'t broken. It\'s just tuned to a different frequency."',
+  '"You\'ve survived every hard day so far. That\'s a 100% success rate."',
+  '"Progress, not perfection. Every single time."',
+  '"Starting is the hardest part. You already did the hardest part."',
+  '"ADHD means your brain runs on interest and passion — that\'s a superpower."',
+  '"Rest is not a reward. Rest is part of the work."',
+  '"You don\'t have to do everything. You have to do the next thing."',
+  '"Time blindness is real. It\'s not laziness. Give yourself grace."',
+  '"One task at a time. One breath at a time."',
+  '"Every checked box is a small act of self-care."',
+  '"Your capacity to feel things deeply? That\'s not too much. That\'s a gift."',
+  '"ADHD is not a disorder of knowing what to do. It\'s a disorder of doing what you know." — Dr. Russell Barkley',
+  '"The ADHD brain is not defective. It\'s differently effective."',
+];
+function newAff() {
+  const el=document.getElementById('aff-text');
+  const cur=el.textContent;
+  let next=cur; while(next===cur) next=AFFS[Math.floor(Math.random()*AFFS.length)];
+  el.style.opacity=0; setTimeout(()=>{ el.textContent=next; el.style.opacity=1; el.style.transition='opacity 0.5s'; },200);
+}
+function addWin() {
+  const ta=document.getElementById('win-ta'), text=ta.value.trim(); if(!text) return;
+  S.wins.unshift({id:uid(),text,date:today()}); DSM.recordChange();
+  save(); ta.value=''; renderWins(); toast('Win logged 🏆');
+}
+function renderWins() {
+  const list=document.getElementById('wins-list');
+  document.getElementById('wins-empty').style.display=S.wins.length?'none':'block';
+  list.querySelectorAll('.win-item').forEach(e=>e.remove());
+  S.wins.slice(0,12).forEach(w=>{
+    const el=document.createElement('div'); el.className='win-item';
+    el.innerHTML=`<div class="win-ico">🏆</div><div><div class="win-text">${esc(w.text)}</div><div class="win-date">${w.date}</div></div>`;
+    list.appendChild(el);
+  });
+  const tod=S.tasks.filter(t=>t.date===today());
+  document.getElementById('st-done').textContent=tod.filter(t=>t.done).length;
+  document.getElementById('st-wins').textContent=S.wins.length;
+  document.getElementById('st-streak').textContent=calcAppStreak();
+  renderWkBars();
+}
+function calcAppStreak() {
+  let s=0; const d=new Date(); d.setDate(d.getDate()-1);
+  for(let i=0;i<30;i++) {
+    const k=fmtD(d);
+    const active=S.wins.some(w=>w.date===k)||S.tasks.some(t=>t.date===k&&t.done);
+    if(active) { s++; d.setDate(d.getDate()-1); } else break;
+  }
+  if(S.wins.some(w=>w.date===today())||S.tasks.some(t=>t.date===today()&&t.done)) s++;
+  return s;
+}
+function renderWkBars() {
+  const c=document.getElementById('wk-bars'); c.innerHTML='';
+  const d=new Date(), dow=d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-dow+1);
+  for(let i=0;i<7;i++) {
+    const day=new Date(mon); day.setDate(mon.getDate()+i);
+    const key=fmtD(day);
+    const total=S.tasks.filter(t=>t.date===key).length;
+    const done=S.tasks.filter(t=>t.date===key&&t.done).length;
+    const pct=total>0?(done/total)*100:0;
+    c.innerHTML+=`<div class="wk-bar-row">
+      <div class="wk-bar-label" style="${key===today()?'color:var(--teal);font-weight:600':''}">${SDAYS[day.getDay()]}</div>
+      <div class="wk-bar-track"><div class="wk-bar-fill" style="width:${pct}%"></div></div>
+      <div class="wk-bar-count">${done}/${total}</div>
+    </div>`;
+  }
+}
+
+// ════════════════════════════════════════════
+// CHECKIN & ENERGY
+// ════════════════════════════════════════════
+function setCheckin(btn,emoji,label) {
+  S.checkin=emoji; save();
+  document.querySelectorAll('.checkin-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function setEnergy(n) {
+  S.energy=n; save();
+  document.querySelectorAll('.e-pip').forEach((p,i)=>p.classList.toggle('on',i<n));
+  const labels=['','🔋 Very Low','🔋 Low','🔋 Medium','🔋 High','🔋 Full Tank'];
+  document.getElementById('energy-lbl').textContent=labels[n];
+}
+
+// ════════════════════════════════════════════
+// THEME
+// ════════════════════════════════════════════
+function openHowTo() { openModal('mod-howto'); }
+
+// ════════════════════════════════════════════
+// ONE THING — complete with confetti
+// ════════════════════════════════════════════
+function onOneThing(val) {
+  S.oneThing = val;
+  S.oneThingDate = today();
+  // Reset completion state when text changes
+  if(S.oneThingDone) { S.oneThingDone=false; applyOneThingState(); }
+  save();
+}
+
+function completeOneThing() {
+  if(!document.getElementById('one-thing').value.trim()) {
+    toast('Name your one thing first! ✍️'); return;
+  }
+  S.oneThingDone = !S.oneThingDone;
+  save(); applyOneThingState();
+  if(S.oneThingDone) { launchConfetti(); }
+}
+
+function applyOneThingState() {
+  const banner = document.getElementById('one-thing-banner');
+  const btn = document.getElementById('one-thing-complete');
+  const q = document.getElementById('one-thing-q');
+  const icon = document.getElementById('one-thing-icon');
+  const input = document.getElementById('one-thing');
+  if(S.oneThingDone) {
+    banner.classList.add('completed');
+    btn.classList.add('done'); btn.textContent='✓';
+    q.innerHTML='<span class="one-thing-done-msg">Great work! You did the thing. 🎉</span>';
+    input.style.textDecoration='line-through'; input.style.opacity='0.6';
+    icon.textContent='✅';
+  } else {
+    banner.classList.remove('completed');
+    btn.classList.remove('done'); btn.textContent='☐';
+    q.textContent='If you do nothing else today, what matters most?';
+    input.style.textDecoration=''; input.style.opacity='';
+    icon.textContent='🎯';
+  }
+}
+
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.id='confetti-canvas';
+  document.body.appendChild(canvas);
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const pieces=[];
+  const colors=['#3d8fa8','#4a9470','#d4920a','#7070b0','#c8604a','#52c48a','#f0b830'];
+  for(let i=0;i<120;i++) {
+    pieces.push({
+      x:Math.random()*canvas.width, y:-10,
+      r:Math.random()*8+4, c:colors[Math.floor(Math.random()*colors.length)],
+      vx:(Math.random()-0.5)*6, vy:Math.random()*4+2,
+      rot:Math.random()*360, vr:(Math.random()-0.5)*8,
+      w:Math.random()*12+4, h:Math.random()*6+3, life:1
+    });
+  }
+  let frame=0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=0.008;
+      ctx.save(); ctx.globalAlpha=Math.max(0,p.life);
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    frame++;
+    if(frame<140) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
+}
+
+// ════════════════════════════════════════════
+// THEME
+// ════════════════════════════════════════════
+function toggleTheme() {
+  const isDark=document.body.getAttribute('data-theme')==='focus';
+  const next=isDark?'calm':'focus';
+  document.body.setAttribute('data-theme',next); S.theme=next; save();
+  document.getElementById('theme-tog').classList.toggle('on',!isDark);
+  document.getElementById('theme-label').textContent=next==='focus'?'🌙 Focus mode':'☀️ Calm mode';
+}
+function applyThemeLabel() {
+  const lbl=document.getElementById('theme-label');
+  if(lbl) lbl.textContent=S.theme==='focus'?'🌙 Focus mode':'☀️ Calm mode';
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+let toastT=null;
+function toast(msg) {
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+function init() {
+  loadS();
+  initDate();
+
+  // Theme
+  document.body.setAttribute('data-theme',S.theme||'calm');
+  document.getElementById('theme-tog').classList.toggle('on',S.theme==='focus');
+  applyThemeLabel();
+
+  // Restore one-thing — reset completion if it's a new day
+  if(S.oneThingDate && S.oneThingDate !== today()) { S.oneThingDone=false; S.oneThing=''; save(); }
+  S.oneThingDate = today();
+  const ot=document.getElementById('one-thing'); if(ot) ot.value=S.oneThing||'';
+  applyOneThingState();
+
+  // Restore brain dump
+  const dt=document.getElementById('dump-ta'); if(dt&&S.dumpText) {
+    dt.value=S.dumpText;
+    const w=S.dumpText.trim().split(/\s+/).filter(x=>x).length;
+    document.getElementById('dump-wc').textContent=w+' words';
+  }
+
+  // Restore energy
+  if(S.energy) setEnergy(S.energy);
+  document.getElementById('hg-mins').textContent=S.hgMins||45;
+
+  // HG state
+  if(S.hgOn) {
+    document.getElementById('hg-tog').classList.add('on');
+    document.getElementById('hg-row').classList.add('on');
+  }
+
+  // Rollover yesterday's unfinished tasks
+  rolloverTasks();
+
+  // Render
+  renderTasks();
+  renderDist();
+  renderTimeline();
+  resetTimer();
+  initTimerDrop();
+
+  // Spend interval to refresh timers
+  setInterval(renderSpend, 60000);
+
+  // Data Safety Monitor
+  DSM.init();
+}
+
+// ════════════════════════════════════════════
+// EXPORT / IMPORT
+// ════════════════════════════════════════════
+function exportData() {
+  const payload = {
+    _version: 2,
+    _exported: new Date().toISOString(),
+    _app: 'Drift ADHD Planner',
+    ...S
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = today();
+  a.download = `drift-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported ↓ drift-backup-' + date + '.json');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data._app || data._app !== 'Drift ADHD Planner') {
+        if (!confirm('This file wasn\'t exported from Drift. Import anyway? Your current data will be replaced.')) {
+          input.value = ''; return;
+        }
+      } else {
+        if (!confirm('This will replace all your current data with the backup. Continue?')) {
+          input.value = ''; return;
+        }
+      }
+      // Strip metadata keys before merging
+      const { _version, _exported, _app, ...rest } = data;
+      Object.assign(S, rest);
+      save();
+      DSM.recordExport();
+      // Re-render everything
+      renderTasks();
+      renderDist();
+      renderTimeline();
+      if (S.energy) setEnergy(S.energy);
+      document.body.setAttribute('data-theme', S.theme || 'calm');
+      document.getElementById('theme-tog').classList.toggle('on', S.theme === 'focus');
+      const ot = document.getElementById('one-thing');
+      if (ot) ot.value = S.oneThing || '';
+      const dt = document.getElementById('dump-ta');
+      if (dt) { dt.value = S.dumpText || ''; dumpChange(); }
+      toast('Data imported ✓ Welcome back!');
+    } catch(err) {
+      alert('Could not read that file. Make sure it\'s a valid Drift backup.\n\n' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ════════════════════════════════════════════
+// DATA SAFETY MONITOR
+// ════════════════════════════════════════════
+const DSM = (() => {
+  // localStorage keys — separate from app state so they survive clears
+  const LS_LAST_EXPORT   = 'drift_lastExport';
+  const LS_CHANGES       = 'drift_meaningfulChanges';
+  const LS_TOAST_SNOOZED = 'drift_toastSnoozed';
+  const LS_BANNER_SNOOZED= 'drift_bannerSnoozed';
+
+  // Thresholds
+  const CHANGE_THRESHOLD  = 10;    // meaningful changes before toast
+  const WARN_DAYS         = 7;     // days without export → amber
+  const DANGER_DAYS       = 14;    // days without export → red
+  const STORAGE_WARN_PCT  = 60;    // storage % → amber indicator
+  const STORAGE_BANNER_PCT= 80;    // storage % → sticky banner
+  const TOAST_SNOOZE_MS   = 24 * 3600 * 1000;
+  const BANNER_SNOOZE_MS  = 48 * 3600 * 1000;
+
+  let meaningfulChanges = 0;
+  let toastShowing = false;
+  let toastAutoHide = null;
+  let storageCheckInterval = null;
+
+  // ── Helpers ──────────────────────────────
+  function getLastExport()   { const v=localStorage.getItem(LS_LAST_EXPORT); return v?new Date(v):null; }
+  function isSnoozed()       { const v=localStorage.getItem(LS_TOAST_SNOOZED); return v&&(Date.now()-parseInt(v))<TOAST_SNOOZE_MS; }
+  function isBannerSnoozed() { const v=localStorage.getItem(LS_BANNER_SNOOZED); return v&&(Date.now()-parseInt(v))<BANNER_SNOOZE_MS; }
+
+  function daysSince(d) {
+    if(!d) return Infinity;
+    return (Date.now() - d.getTime()) / 86400000;
+  }
+
+  function fmtLastExport(d) {
+    if(!d) return 'No backup yet';
+    const days = Math.floor(daysSince(d));
+    if(days === 0) return 'Backed up today ✓';
+    if(days === 1) return 'Backed up yesterday';
+    if(days < 7)  return `Backed up ${days} days ago`;
+    return `Last backup: ${d.toLocaleDateString(undefined,{day:'numeric',month:'short'})}`;
+  }
+
+  // ── Storage measurement ───────────────────
+  function getStorageUsage() {
+    try {
+      let total = 0;
+      for(let k in localStorage) {
+        if(!localStorage.hasOwnProperty(k)) continue;
+        total += (localStorage[k].length + k.length) * 2; // UTF-16 bytes
+      }
+      // Typical localStorage limit is 5MB = 5,242,880 bytes
+      const limitBytes = 5 * 1024 * 1024;
+      return { used: total, limit: limitBytes, pct: Math.min(100, (total/limitBytes)*100) };
+    } catch(e) { return { used:0, limit:5242880, pct:0 }; }
+  }
+
+  function fmtBytes(b) {
+    if(b < 1024) return b+'B';
+    if(b < 1048576) return (b/1024).toFixed(1)+'KB';
+    return (b/1048576).toFixed(2)+'MB';
+  }
+
+  // ── UI updates ────────────────────────────
+  function updateStorageBar() {
+    const { used, limit, pct } = getStorageUsage();
+    const fill  = document.getElementById('storage-fill');
+    const label = document.getElementById('storage-pct-label');
+    if(!fill || !label) return;
+
+    fill.style.width = pct.toFixed(1) + '%';
+    fill.classList.toggle('warn',   pct >= STORAGE_WARN_PCT   && pct < STORAGE_BANNER_PCT);
+    fill.classList.toggle('danger', pct >= STORAGE_BANNER_PCT);
+    label.textContent = fmtBytes(used) + ' / 5MB';
+
+    // Show or hide the sticky banner
+    const banner = document.getElementById('storage-banner');
+    if(banner) {
+      if(pct >= STORAGE_BANNER_PCT && !isBannerSnoozed()) {
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
+    }
+  }
+
+  function updateBackupPill() {
+    const pill  = document.getElementById('backup-pill');
+    const label = document.getElementById('backup-pill-label');
+    if(!pill || !label) return;
+
+    const last = getLastExport();
+    const days = daysSince(last);
+
+    label.textContent = fmtLastExport(last);
+    pill.classList.remove('bp-good','bp-warn','bp-danger');
+
+    if(!last || days >= DANGER_DAYS)      pill.classList.add('bp-danger');
+    else if(days >= WARN_DAYS)            pill.classList.add('bp-warn');
+    else                                  pill.classList.add('bp-good');
+  }
+
+  // ── Toast ─────────────────────────────────
+  function showToastDSM(title, sub) {
+    if(toastShowing || isSnoozed()) return;
+    const el = document.getElementById('dsm-toast');
+    if(!el) return;
+    el.querySelector('.dt-title').textContent = title;
+    el.querySelector('.dt-sub').textContent   = sub;
+    el.classList.add('show');
+    toastShowing = true;
+    clearTimeout(toastAutoHide);
+    toastAutoHide = setTimeout(dismissToast, 12000);
+  }
+
+  function dismissToast() {
+    const el = document.getElementById('dsm-toast');
+    if(el) el.classList.remove('show');
+    toastShowing = false;
+  }
+
+  // ── Trigger logic ─────────────────────────
+  function checkTriggers(reason) {
+    if(isSnoozed()) return;
+    const last = getLastExport();
+    const days = daysSince(last);
+
+    if(reason === 'change' && meaningfulChanges >= CHANGE_THRESHOLD) {
+      setTimeout(() => showToastDSM(
+        'Great progress — back it up 💾',
+        `You've made ${meaningfulChanges} changes since your last export. Takes 2 seconds.`
+      ), 800);
+    }
+
+    if(reason === 'load') {
+      if(!last) {
+        // First-time user — show after 2 minutes so they've had time to enter data
+        setTimeout(() => showToastDSM(
+          'No backup yet 🛡️',
+          'You haven\'t exported a backup. One click keeps your data safe.'
+        ), 120000);
+      } else if(days >= DANGER_DAYS && meaningfulChanges > 0) {
+        setTimeout(() => showToastDSM(
+          `${Math.floor(days)} days since your last backup`,
+          'You\'ve made changes since then. Download a fresh backup now.'
+        ), 3000);
+      } else if(days >= WARN_DAYS) {
+        setTimeout(() => showToastDSM(
+          'Time for a backup?',
+          `Your last backup was ${Math.floor(days)} days ago. Quick export keeps everything safe.`
+        ), 6000);
+      }
+    }
+  }
+
+  // ── Public API ────────────────────────────
+  return {
+    // Call when a meaningful record is added or deleted
+    recordChange() {
+      meaningfulChanges++;
+      try { localStorage.setItem(LS_CHANGES, meaningfulChanges); } catch(e){}
+      updateBackupPill();
+      checkTriggers('change');
+    },
+
+    // Call on every successful export
+    recordExport() {
+      try {
+        localStorage.setItem(LS_LAST_EXPORT, new Date().toISOString());
+        localStorage.removeItem(LS_CHANGES);
+        localStorage.removeItem(LS_TOAST_SNOOZED);
+      } catch(e){}
+      meaningfulChanges = 0;
+      dismissToast();
+      updateBackupPill();
+      updateStorageBar();
+    },
+
+    // Snooze toast for 24h
+    snoozeToast() {
+      try { localStorage.setItem(LS_TOAST_SNOOZED, Date.now().toString()); } catch(e){}
+      dismissToast();
+    },
+
+    // Snooze storage banner for 48h
+    dismissBanner() {
+      try { localStorage.setItem(LS_BANNER_SNOOZED, Date.now().toString()); } catch(e){}
+      const b = document.getElementById('storage-banner');
+      if(b) b.classList.remove('show');
+    },
+
+    // Export + record — called by all export buttons
+    exportAndRecord() {
+      exportData();
+      this.recordExport();
+    },
+
+    // Initialise on page load
+    init() {
+      meaningfulChanges = parseInt(localStorage.getItem(LS_CHANGES)||'0')||0;
+
+      // beforeunload — only if there are unsaved meaningful changes
+      window.addEventListener('beforeunload', e => {
+        if(meaningfulChanges > 0) {
+          const msg = 'You have changes that haven\'t been exported. Download a backup before leaving?';
+          e.preventDefault(); e.returnValue = msg; return msg;
+        }
+      });
+
+      updateStorageBar();
+      updateBackupPill();
+      checkTriggers('load');
+
+      // Re-check storage every 5 minutes in case it grows
+      storageCheckInterval = setInterval(() => {
+        updateStorageBar();
+        updateBackupPill();
+      }, 300000);
+    },
+  };
+})();
+
+// ════════════════════════════════════════════
+// ARCHIVE VIEWER
+// ════════════════════════════════════════════
+const ARCHIVE = (() => {
+  let data   = null;
+  let active = false;
+
+  function fmtDate(d) {
+    if(!d) return '—';
+    try { return new Date(d).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
+    catch(e){ return String(d); }
+  }
+  function fmtDateShort(d) {
+    if(!d) return '—';
+    try { return new Date(d).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}); }
+    catch(e){ return String(d); }
+  }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function formatDateGroup(dateStr){
+    try{ const d=new Date(dateStr+'T00:00:00'); return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+    catch(e){ return dateStr; }
+  }
+
+  function renderTasks(){
+    const card=document.getElementById('arc-tasks-card'); if(!card) return;
+    const tasks=data.tasks||[];
+    if(!tasks.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">📋</div><div class="arc-empty-text">No tasks in this archive.</div></div>'; return; }
+    const groups={};
+    tasks.forEach(t=>{ const d=t.date||'Unknown'; if(!groups[d]) groups[d]=[]; groups[d].push(t); });
+    const sortedDates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+    const done=tasks.filter(t=>t.done).length;
+    let html=`<div style="padding:10px 14px 8px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">${tasks.length} tasks · ${done} completed · ${tasks.length-done} incomplete</div>`;
+    sortedDates.forEach(date=>{
+      html+=`<div class="arc-date-group">${esc(formatDateGroup(date))}</div>`;
+      groups[date].forEach(t=>{
+        const lbl={urgent:'🔴',focus:'🔵',later:'⚪'};
+        html+=`<div class="arc-task">
+          <div class="arc-check-icon ${t.done?'done':'undone'}">${t.done?'✓':''}</div>
+          <div style="flex:1">
+            <div class="arc-task-text ${t.done?'done':''}">${esc(t.text)}</div>
+            <div class="arc-task-meta">
+              ${t.priority?`<span class="tag tag-${t.priority}" style="font-size:9.5px">${lbl[t.priority]||''} ${t.priority}</span>`:''}
+              ${t.est&&t.est!=='?'?`<span class="task-time" style="font-size:10px">⏱ ${t.est}</span>`:''}
+              ${t.rolled?'<span class="tag tag-rolled" style="font-size:9.5px">↩ carried</span>':''}
+            </div>
+          </div>
+        </div>`;
+      });
+    });
+    card.innerHTML=html;
+  }
+
+  function renderWins(){
+    const card=document.getElementById('arc-wins-card'); if(!card) return;
+    const wins=data.wins||[];
+    if(!wins.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">🏆</div><div class="arc-empty-text">No wins in this archive.</div></div>'; return; }
+    card.innerHTML=`<div style="padding:10px 14px 8px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">${wins.length} wins logged</div>`
+      +wins.map(w=>`<div class="arc-win">
+        <div class="arc-win-ico">🏆</div>
+        <div><div class="arc-win-text">${esc(w.text)}</div><div class="arc-win-date">${fmtDateShort(w.date)}</div></div>
+      </div>`).join('');
+  }
+
+  function renderHabits(){
+    const card=document.getElementById('arc-habits-card'); if(!card) return;
+    const habits=data.habits||[];
+    if(!habits.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">✨</div><div class="arc-empty-text">No habits in this archive.</div></div>'; return; }
+    const allDates=new Set();
+    habits.forEach(h=>Object.keys(h.checks||{}).forEach(d=>allDates.add(d)));
+    const sortedDates=[...allDates].sort().slice(-14);
+    if(!sortedDates.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">✨</div><div class="arc-empty-text">No tracking data in this archive.</div></div>'; return; }
+    const SDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const getDL=d=>{ try{ return SDAYS[new Date(d+'T00:00:00').getDay()]; }catch(e){ return d.slice(-3); } };
+    let html=`<div style="overflow-x:auto"><div style="display:grid;grid-template-columns:170px repeat(${sortedDates.length},1fr);min-width:400px">
+      <div style="padding:8px 14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:600;border-bottom:2px solid var(--border)">Habit</div>
+      ${sortedDates.map(d=>`<div style="padding:6px 4px;font-size:8.5px;text-align:center;color:var(--text3);font-weight:600;text-transform:uppercase;border-bottom:2px solid var(--border)">${getDL(d)}<br><span style="font-family:var(--ff-mono);font-size:7.5px">${d.slice(5)}</span></div>`).join('')}`;
+    habits.forEach(h=>{
+      html+=`<div style="padding:9px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text)"><span>${h.emoji||'✦'}</span><span>${esc(h.name)}</span></div>`;
+      sortedDates.forEach(d=>{
+        const checked=!!(h.checks||{})[d];
+        html+=`<div style="display:flex;align-items:center;justify-content:center;padding:7px;border-bottom:1px solid var(--border)"><div class="arc-h-dot ${checked?'done':'miss'}">${checked?'✓':'·'}</div></div>`;
+      });
+    });
+    html+=`</div></div><div style="padding:8px 14px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)">Showing last ${sortedDates.length} days</div>`;
+    card.innerHTML=html;
+  }
+
+  function renderReflections(){
+    const list=document.getElementById('arc-reflections-list'); if(!list) return;
+    const reflections=data.reflections||{};
+    const weeks=Object.keys(reflections).sort().reverse();
+    if(!weeks.length){ list.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">🔮</div><div class="arc-empty-text">No reflections in this archive.</div></div>'; return; }
+    const PROMPTS={drain:'🔋 What drained me',energy:'⚡ What energised me',diff:'🔁 What I\'d do differently',proud:'🌟 One thing I\'m proud of',adhd:'🧠 ADHD patterns'};
+    list.innerHTML=weeks.map(wk=>{
+      const r=reflections[wk]||{};
+      if(!Object.values(r).some(v=>v&&v.trim())) return '';
+      let weekLabel=wk;
+      try{ const d=new Date(wk+'T00:00:00'); weekLabel='Week of '+d.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}); }catch(e){}
+      return `<div class="arc-reflect">
+        <div class="arc-reflect-head"><div class="arc-reflect-week">${weekLabel}</div></div>
+        <div class="arc-reflect-body">
+          ${Object.entries(PROMPTS).map(([k,lbl])=>{
+            const val=r[k]||'';
+            return `<div><div class="arc-reflect-q">${lbl}</div><div class="arc-reflect-a ${val?'':'empty'}">${val?esc(val):'Not filled in'}</div></div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDump(){
+    const el=document.getElementById('arc-dump-content'); if(!el) return;
+    const text=data.dumpText||'';
+    if(!text.trim()){ el.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">🌀</div><div class="arc-empty-text">No brain dump text in this archive.</div></div>'; return; }
+    el.innerHTML=`<div class="arc-dump-text">${esc(text)}</div>`;
+  }
+
+  function renderNotNow(){
+    const card=document.getElementById('arc-notnow-card'); if(!card) return;
+    const items=data.notNow||[];
+    if(!items.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">🅿️</div><div class="arc-empty-text">No parked items in this archive.</div></div>'; return; }
+    card.innerHTML=`<div style="padding:9px 14px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">${items.length} parked item${items.length!==1?'s':''}</div>`
+      +items.map(n=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text2)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--lav);flex-shrink:0"></div>
+        <span style="flex:1">${esc(n.text)}</span>
+        ${n.date?`<span style="font-size:10px;color:var(--text3);font-family:var(--ff-mono)">${n.date}</span>`:''}
+      </div>`).join('');
+  }
+
+  function renderMeds(){
+    const card=document.getElementById('arc-meds-card'); if(!card) return;
+    const meds=data.medications||[];
+    if(!meds.length){ card.innerHTML='<div class="arc-empty"><div class="arc-empty-icon">💊</div><div class="arc-empty-text">No medications in this archive.</div></div>'; return; }
+    card.innerHTML=`<div style="padding:9px 14px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">${meds.length} medication${meds.length!==1?'s':''}</div>`
+      +meds.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)">
+        <div style="font-size:1.1rem">💊</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">${esc(m.name)}</div>${m.note?`<div style="font-size:11px;color:var(--text3)">${esc(m.note)}</div>`:''}</div>
+        <div style="font-size:10.5px;color:var(--text3);font-family:var(--ff-mono)">${m.time||''}</div>
+      </div>`).join('');
+  }
+
+  function renderStats(){
+    const el=document.getElementById('arc-stats'); if(!el) return;
+    const tasks=data.tasks||[], wins=data.wins||[], habits=data.habits||[];
+    const totalChecks=habits.reduce((s,h)=>s+Object.values(h.checks||{}).filter(Boolean).length,0);
+    el.innerHTML=`
+      <div class="arc-stat"><div class="arc-stat-num">${tasks.length}</div><div class="arc-stat-lbl">Tasks</div></div>
+      <div class="arc-stat"><div class="arc-stat-num">${wins.length}</div><div class="arc-stat-lbl">Wins logged</div></div>
+      <div class="arc-stat"><div class="arc-stat-num">${totalChecks}</div><div class="arc-stat-lbl">Habit check-ins</div></div>`;
+  }
+
+  function navigateTo(viewId, navId){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById(viewId)?.classList.add('active');
+    document.getElementById(navId)?.classList.add('active');
+  }
+
+  return {
+    load(input){
+      const file=input.files[0]; if(!file) return;
+      const reader=new FileReader();
+      reader.onload=e=>{
+        try{
+          const parsed=JSON.parse(e.target.result);
+          if(parsed._app&&parsed._app!=='Drift ADHD Planner'){
+            if(!confirm('This file doesn\'t look like a Drift backup. Try to open it anyway?')){ input.value=''; return; }
+          }
+          const {_version,_exported,_app,...archiveState}=parsed;
+          data=archiveState; active=true;
+
+          // Banner
+          const banner=document.getElementById('archive-banner');
+          const bannerSub=document.getElementById('archive-banner-sub');
+          const viewSub=document.getElementById('archive-view-sub');
+          if(banner) banner.classList.add('show');
+          if(bannerSub&&_exported) bannerSub.textContent='Exported on '+fmtDate(_exported);
+          if(viewSub&&_exported)   viewSub.textContent='Archive from '+fmtDate(_exported)+' — read-only, your current data is safe';
+
+          // Render all sections
+          renderStats(); renderTasks(); renderWins(); renderHabits();
+          renderReflections(); renderDump(); renderNotNow(); renderMeds();
+
+          // Navigate to archive view, reset to tasks tab
+          navigateTo('view-archive','nav-archive');
+          document.querySelectorAll('.archive-tab').forEach(t=>t.classList.remove('active'));
+          document.querySelector('.archive-tab')?.classList.add('active');
+          document.querySelectorAll('.archive-section').forEach(s=>s.classList.remove('active'));
+          document.getElementById('arc-sec-tasks')?.classList.add('active');
+
+          toast('📦 Archive loaded — read-only');
+        }catch(err){ alert('Could not read archive file.\n\n'+err.message); }
+        input.value='';
+      };
+      reader.readAsText(file);
+    },
+
+    showSection(name,btn){
+      document.querySelectorAll('.archive-section').forEach(s=>s.classList.remove('active'));
+      document.querySelectorAll('.archive-tab').forEach(t=>t.classList.remove('active'));
+      document.getElementById('arc-sec-'+name)?.classList.add('active');
+      if(btn) btn.classList.add('active');
+    },
+
+    restore(){
+      if(!data) return;
+      if(!confirm('This will replace your current active planner data with this archive.\n\nMake sure you\'ve exported a backup of your current data first. Continue?')) return;
+      const {_version,_exported,_app,...rest}=data;
+      Object.assign(S,rest);
+      save(); DSM.recordExport();
+      this.exit();
+      renderTasks(); renderDist(); renderTimeline();
+      if(S.energy) setEnergy(S.energy);
+      document.body.setAttribute('data-theme',S.theme||'calm');
+      document.getElementById('theme-tog').classList.toggle('on',S.theme==='focus');
+      const ot=document.getElementById('one-thing'); if(ot) ot.value=S.oneThing||'';
+      const dt=document.getElementById('dump-ta');   if(dt){ dt.value=S.dumpText||''; dumpChange(); }
+      toast('Archive restored ✓');
+    },
+
+    exit(){
+      active=false; data=null;
+      document.getElementById('archive-banner')?.classList.remove('show');
+      navigateTo('view-today', null);
+      document.querySelector('.nav-item[onclick*="today"]')?.classList.add('active');
+      toast('Back to your active planner ✓');
+    },
+
+    isActive(){ return active; },
+  };
+})();
+
+init();
+</script>
+<!-- DSM safety toast -->
+<div id="dsm-toast">
+  <div class="dt-icon">🛡️</div>
+  <div class="dt-body">
+    <div class="dt-title" id="dsm-toast-title">Back up your data</div>
+    <div class="dt-sub"   id="dsm-toast-sub">Your progress deserves to be safe.</div>
+  </div>
+  <button class="dt-cta" onclick="DSM.exportAndRecord()">Back up now</button>
+  <button class="dt-x"   onclick="DSM.snoozeToast()">×</button>
+</div>
+
+</body>
+</html>
