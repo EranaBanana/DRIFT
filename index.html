@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -113,6 +113,53 @@ textarea { resize: none; }
   grid-template-columns: 230px 1fr;
   height: 100vh;
   overflow: hidden;
+}
+
+/* Mobile menu overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+  grid-column: 1 / -1;
+}
+.sidebar-overlay.open { display: block; }
+
+/* Mobile top bar */
+.mobile-topbar {
+  display: none;
+  align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 100;
+  grid-column: 1 / -1;
+}
+.mobile-menu-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+  transition: all var(--t);
+}
+.mobile-menu-btn:hover { background: var(--teal-soft); }
+.mobile-logo {
+  display: flex; align-items: center; gap: 8px;
+}
+.mobile-logo-icon {
+  width: 28px; height: 28px;
+  background: var(--teal); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.mobile-logo-name {
+  font-family: var(--ff-display);
+  font-size: 16px; font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 /* ════════════════════════════════════════════
@@ -517,6 +564,16 @@ textarea { resize: none; }
 .tag-focus  { background: var(--teal-soft);  color: var(--teal); }
 .tag-later  { background: var(--lav-soft);   color: var(--lav); }
 .tag-rolled { background: var(--lav-soft);   color: var(--lav); font-style: italic; }
+.tag-none   { background: var(--bg2); color: var(--text3); border: 1px dashed var(--border2); }
+
+/* Clickable priority tag */
+.tag-priority {
+  cursor: pointer;
+  transition: filter var(--t), transform var(--t);
+  user-select: none;
+}
+.tag-priority:hover { filter: brightness(0.88); transform: scale(1.05); }
+.tag-priority:hover::after { content: ' ↻'; opacity: 0.7; font-weight: 400; }
 
 .task-time {
   font-size: 10px;
@@ -1251,6 +1308,7 @@ textarea { resize: none; }
   padding: 10px 20px; font-size: 12.5px;
   font-weight: 500; text-align: center;
   gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap;
+  grid-column: 1 / -1; /* span both sidebar + main on desktop */
 }
 #storage-banner.show { display: flex; }
 #storage-banner strong { font-weight: 700; }
@@ -1510,10 +1568,208 @@ textarea { resize: none; }
 }
 .arc-empty-icon { font-size: 2rem; margin-bottom: 8px; }
 .arc-empty-text { font-size: 13px; }
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — TABLET (≤900px)
+════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 200px 1fr;
+  }
+  .view-head { padding: 18px 20px 0; }
+  .view-body { padding: 14px 20px 24px; }
+
+  /* Today view — stack on tablet too (300px right col is tight) */
+  .today-cols { grid-template-columns: 1fr; }
+
+  /* Week grid — scrollable row on tablet */
+  .week-grid {
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+    overflow-x: auto;
+  }
+
+  /* Wins & brain dump side panels */
+  .wins-layout   { grid-template-columns: 1fr; }
+  .dump-layout   { grid-template-columns: 1fr; }
+
+  /* Reflection grid */
+  .reflect-grid  { grid-template-columns: 1fr; }
+
+  /* Stats row */
+  .stats-row     { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤640px)
+════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Body must allow vertical scroll on mobile */
+  html, body { overflow: auto; height: auto; min-height: 100%; }
+
+  /* Hide scrollbar lockout on shell */
+  .shell {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  /* Show mobile topbar */
+  .mobile-topbar { display: flex; }
+
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px; max-width: 85vw;
+    height: 100dvh;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Main fills full width */
+  .main {
+    width: 100%;
+    flex: 1;
+    overflow: visible;
+    overflow-x: hidden;
+  }
+
+  /* Views no longer locked to viewport height */
+  .view, #view-archive {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: visible;
+    height: auto;
+  }
+  .view.active, #view-archive.active { display: flex; }
+
+  .view-head {
+    padding: 16px 16px 0;
+    flex-direction: column; gap: 10px;
+  }
+  .view-title { font-size: 20px; }
+  .view-acts  { flex-wrap: wrap; gap: 6px; }
+
+  .view-body {
+    padding: 12px 16px 24px;
+    overflow: visible;
+    overflow-x: hidden;
+    flex: none;
+  }
+
+  /* Today view — stack columns */
+  .today-cols { grid-template-columns: 1fr; }
+
+  /* Task card — remove fixed max-height so content shows fully */
+  .card[style*="max-height"] { max-height: none !important; }
+
+  /* Week grid — horizontal scroll on mobile */
+  .week-grid {
+    grid-template-columns: repeat(7, minmax(130px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  /* Habit table — horizontal scroll */
+  .habit-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .habit-head, .habit-row {
+    grid-template-columns: 150px repeat(7, 40px);
+    min-width: 450px;
+  }
+
+  /* Wins layout */
+  .wins-layout   { grid-template-columns: 1fr; }
+  .dump-layout   { grid-template-columns: 1fr; }
+  .reflect-grid  { grid-template-columns: 1fr; }
+
+  /* Stats */
+  .stats-row     { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .stat-num      { font-size: 22px; }
+
+  /* Archive stats */
+  .arc-stats     { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .arc-stat-num  { font-size: 20px; }
+
+  /* Archive reflection body */
+  .arc-reflect-body { grid-template-columns: 1fr; }
+
+  /* Pomodoro timer */
+  .timer-num     { font-size: 40px; }
+
+  /* Cards */
+  .card-head { padding: 10px 14px; }
+
+  /* One-thing banner */
+  .one-thing { flex-wrap: wrap; gap: 10px; }
+
+  /* Spend hero */
+  .spend-hero    { flex-wrap: wrap; }
+
+  /* Distraction row */
+  .dist-input-row { flex-wrap: wrap; }
+
+  /* Task add row wrapping */
+  .task-add-row { flex-wrap: wrap; }
+
+  /* View head acts */
+  .view-acts .btn { font-size: 11.5px; padding: 6px 11px; }
+
+  /* Brain dump layout: stack in 1 col */
+  .dump-layout .card:last-child { margin-top: 0; }
+
+  /* Archive tabs — wrap nicely */
+  .archive-tabs { gap: 5px; }
+  .archive-tab  { font-size: 11px; padding: 5px 11px; }
+
+  /* DSM toast — full width near bottom */
+  #dsm-toast {
+    width: calc(100% - 24px);
+    left: 12px;
+    transform: translateY(20px);
+    border-radius: var(--r-sm);
+  }
+  #dsm-toast.show { transform: translateY(0); }
+
+  /* Toast centering */
+  #toast { font-size: 11px; padding: 7px 15px; white-space: normal; max-width: calc(100% - 32px); text-align: center; }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — VERY SMALL (≤380px)
+════════════════════════════════════════════ */
+@media (max-width: 380px) {
+  .week-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .stats-row .stat-box:last-child { grid-column: 1 / -1; }
+  .arc-stats { grid-template-columns: 1fr 1fr; }
+  .arc-stats .arc-stat:last-child { grid-column: 1 / -1; }
+  .timer-num { font-size: 34px; }
+  .view-title { font-size: 18px; }
+}
 </style>
 <body data-theme="calm">
 
 <div class="shell">
+
+<!-- Mobile overlay backdrop -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Mobile top bar (hidden on desktop) -->
+<div class="mobile-topbar" id="mobile-topbar">
+  <button class="mobile-menu-btn" onclick="openSidebar()" aria-label="Open menu">☰</button>
+  <div class="mobile-logo">
+    <div class="mobile-logo-icon">🧠</div>
+    <div class="mobile-logo-name">Drift</div>
+  </div>
+  <div style="width:36px"></div><!-- spacer to centre logo -->
+</div>
 
 <!-- Storage warning banner — sticky, appears at 80%+ usage -->
 <div id="storage-banner">
@@ -1525,7 +1781,7 @@ textarea { resize: none; }
 <!-- ════════════════════════════════════════════
      SIDEBAR
 ════════════════════════════════════════════ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="s-logo">
     <div class="s-logo-mark">
       <div class="s-logo-icon">🧠</div>
@@ -2453,6 +2709,8 @@ function renderTasks() {
     const hasSubs=task.subtasks&&task.subtasks.length>0;
     const doneSubs=hasSubs?task.subtasks.filter(s=>s.done).length:0;
     const labels={urgent:'🔴 Urgent',focus:'🔵 Focus',later:'⚪ Later'};
+    const priClass = task.priority ? `tag-${task.priority}` : 'tag-none';
+    const priLabel = labels[task.priority] || '· priority';
     el.className='task-item'+(task.done?' done':'')+(task.rolled?' rolled':'')+(isFocusing?' focusing':'');
     el.draggable = !task.done;
     el.innerHTML=`
@@ -2460,7 +2718,7 @@ function renderTasks() {
       <div class="task-body">
         <div class="task-text">${esc(task.text)}</div>
         <div class="task-meta">
-          <span class="tag tag-${task.priority}">${labels[task.priority]||task.priority}</span>
+          <span class="tag ${priClass} tag-priority" onclick="cyclePriority('${task.id}')" title="Click to change priority">${priLabel}</span>
           ${task.est&&task.est!=='?'?`<span class="task-time">⏱ ${task.est}</span>`:''}
           ${isFocusing?'<span class="tag" style="background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal-mid)">⏱ Focusing…</span>':''}
           ${task.rolled?'<span class="tag tag-rolled">↩ carried forward</span>':''}
@@ -2509,6 +2767,15 @@ function toggleSub(tid,sid) {
   document.getElementById('subs-'+tid)?.classList.add('open');
 }
 function delTask(id) { S.tasks=S.tasks.filter(x=>x.id!==id); DSM.recordChange(); save(); renderTasks(); }
+function cyclePriority(id) {
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  const cycle=['urgent','focus','later'];
+  const idx=cycle.indexOf(t.priority);
+  t.priority=cycle[(idx+1)%cycle.length];
+  DSM.recordChange(); save(); renderTasks();
+  const labels={urgent:'🔴 Urgent',focus:'🔵 Focus',later:'⚪ Later'};
+  toast(`Priority → ${labels[t.priority]}`);
+}
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ════════════════════════════════════════════
@@ -3820,6 +4087,26 @@ const ARCHIVE = (() => {
 })();
 
 init();
+
+// ── Mobile sidebar drawer ──────────────────────────────────
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+// Close sidebar when a nav item is tapped on mobile
+document.querySelectorAll('.nav-item').forEach(function(el){
+  el.addEventListener('click', function(){
+    if(window.innerWidth<=640) closeSidebar();
+  });
+});
+// Close on Escape key
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSidebar(); });
 </script>
 <!-- DSM safety toast -->
 <div id="dsm-toast">
